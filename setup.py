@@ -6,6 +6,6 @@ setup(
     description='tdm modules and tools',
     author='ALfred E. Neumann',
     author_email='aen@gmail.com',
-    packages=['tdm', 'tdm.gfs'],
-    scripts=['bin/gfs_fetch'],      
+    packages=['tdm', 'tdm.gfs', 'tdm.gfs.noaa'],
+    scripts=['bin/gfs_fetch'],
 )
