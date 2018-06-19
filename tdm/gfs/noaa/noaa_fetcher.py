@@ -56,7 +56,7 @@ class noaa_fetcher(object):
                            blocksize=1024*1024)
         return target
 
-    def fetch(self, res, tdir, pattern='gfs.t%Hz.pgrb2b',
+    def fetch(self, res, tdir, pattern='gfs.t%Hz.pgrb2full',
               nthreads=4, tsleep=300):
         ds_path = os.path.join(self.NOAA_BASE_PATH, self.ds)
         pre = self.date.strftime(pattern) + '.' + res
