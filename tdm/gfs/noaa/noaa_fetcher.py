@@ -47,6 +47,7 @@ class noaa_fetcher(object):
 
     def fetch_file(self, ds_path, fname, tdir):
         LOGGER.info('Fetching %s/%s into %s', self.ds, fname, tdir)
+        begin = datetime.datetime.now()
         target = os.path.join(tdir, fname)
         with FTP(self.NOAA_FTP_SERVER) as ftp:
             ftp.login()
@@ -54,6 +55,9 @@ class noaa_fetcher(object):
             cmd = 'RETR %s' % fname
             ftp.retrbinary(cmd, open(target, 'wb').write,
                            blocksize=1024*1024)
+        dt = datetime.datetime.now() - begin
+        LOGGER.info('It took %s secs to fetch %s',
+                    dt.total_seconds(), fname)
         return target
 
     def fetch(self, res, tdir, pattern='gfs.t%Hz.pgrb2full',
@@ -66,7 +70,7 @@ class noaa_fetcher(object):
             time.sleep(tsleep)
         files = [f for f in self.list_files_in_path(ds_path)
                  if f.startswith(pre)]
-
+        begin = datetime.datetime.now()
         with futures.ThreadPoolExecutor(max_workers=nthreads) as executor:
             fut_by_fname = {executor.submit(self.fetch_file,
                                             ds_path, fname, tdir): fname
@@ -79,3 +83,6 @@ class noaa_fetcher(object):
                     LOGGER.error('%r generated an exception: %s', fname, exc)
                 else:
                     LOGGER.info('%r saved in %s', fname, res)
+        dt = datetime.datetime.now() - begin
+        LOGGER.info('It took %s secs to fetch %s.',
+                    dt.total_seconds(), self.ds)
