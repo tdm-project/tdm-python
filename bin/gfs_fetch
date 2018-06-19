@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 from tdm.gfs.noaa import noaa_fetcher
+from tdm import VERSION as version
 
 from datetime import datetime
 
@@ -15,6 +16,8 @@ def make_parser():
         description="Fetch GFS files from a remote production service",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument('-V', '--version', action='version', version=version,
+                        help='print version number and exit')
     parser.add_argument(
         '--year', metavar='INT', type=int,
         default=NOW.year,
@@ -27,7 +30,7 @@ def make_parser():
     )
     parser.add_argument(
         '--day', metavar='INT', type=int,
-        default=NOW.dat,
+        default=NOW.day,
         help="Requested day, defaults to today"
     )
     parser.add_argument(
