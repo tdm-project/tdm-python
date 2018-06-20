@@ -39,6 +39,11 @@ def make_parser():
         help="Requested hour, defaults to 0"
     )
     parser.add_argument(
+        '--n-download-threads', metavar='INT', type=int,
+        default=10,
+        help="Number of parallel download threads, defaults to 10"
+    )
+    parser.add_argument(
         '--target-directory', metavar='DIR', type=str, default='./GFS_FETCHED',
         help="directory where the dataset should be downloaded"
     )
@@ -55,7 +60,8 @@ def main(argv):
     args, unknown = parser.parse_known_args(argv)
     nf = noaa_fetcher(args.year, args.month, args.day, args.hour)
     os.mkdir(args.target_directory)
-    nf.fetch(args.requested_resolution, args.target_directory)
+    nf.fetch(args.requested_resolution, args.target_directory,
+             nthreads=args.n_download_threads)
 
 
 main(sys.argv)
