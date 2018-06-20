@@ -14,6 +14,7 @@ class noaa_fetcher(object):
     NOAA_FTP_SERVER = 'ftp.ncep.noaa.gov'
     NOAA_BASE_PATH = '/pub/data/nccf/com/gfs/prod/'
     NOAA_DATASET_FOLDER_SIZE = 196608
+    FETCH_ATTEMPTS = 3
 
     @classmethod
     def list_files_in_path(cls, path):
@@ -62,6 +63,19 @@ class noaa_fetcher(object):
 
     def fetch(self, res, tdir, pattern='gfs.t%Hz.pgrb2full',
               nthreads=4, tsleep=300):
+        def recover_results(fut_by_name):
+            failed = []
+            for fut in futures.as_completed(fut_by_fname):
+                fname = fut_by_fname[fut]
+                try:
+                    res = fut.result()
+                except Exception as exc:
+                    LOGGER.error('%s generated an exception: %s', fname, exc)
+                    failed.append(fname)
+                    LOGGER.info('adding %s to failed', fname)
+                else:
+                    LOGGER.info('%s saved in %s', fname, res)
+            return failed
         ds_path = os.path.join(self.NOAA_BASE_PATH, self.ds)
         pre = self.date.strftime(pattern) + '.' + res
         LOGGER.info('Fetching %s/%s into %s', self.ds, pre, tdir)
@@ -72,17 +86,21 @@ class noaa_fetcher(object):
                  if f.startswith(pre)]
         begin = datetime.datetime.now()
         with futures.ThreadPoolExecutor(max_workers=nthreads) as executor:
-            fut_by_fname = {executor.submit(self.fetch_file,
-                                            ds_path, fname, tdir): fname
-                            for fname in files}
-            for fut in futures.as_completed(fut_by_fname):
-                fname = fut_by_fname[fut]
-                try:
-                    res = fut.result()
-                except Exception as exc:
-                    LOGGER.error('%r generated an exception: %s', fname, exc)
+            for i in range(self.FETCH_ATTEMPTS):
+                fut_by_fname = {executor.submit(self.fetch_file,
+                                                ds_path, fname, tdir): fname
+                                for fname in files}
+                files = recover_results(fut_by_fname)
+                if len(files) == 0:
+                    dt = datetime.datetime.now() - begin
+                    LOGGER.info('It took %s secs to fetch %s.',
+                                dt.total_seconds(), self.ds)
+                    break
                 else:
-                    LOGGER.info('%r saved in %s', fname, res)
-        dt = datetime.datetime.now() - begin
-        LOGGER.info('It took %s secs to fetch %s.',
-                    dt.total_seconds(), self.ds)
+                    LOGGER.info(
+                        'At fetch iteration %d of %d, %d files missing.',
+                        i, self.FETCH_ATTEMPTS, len(files))
+            else:
+                LOGGER.error(
+                    'Still %d files missing after %d iteration.',
+                    len(files), self.FETCH_ATTEMPTS)
