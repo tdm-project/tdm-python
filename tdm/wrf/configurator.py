@@ -64,16 +64,28 @@ class confbox(dict):
 
 
 class domain(confbox):
-    def __init__(self, conf):
+    def __init__(self, name, i, conf):
         super(domain, self).__init__(conf)
         self.parent = None
+        self.name = name
+        self.id = i
 
     def __getitem__(self, k):
         try:
             return super(domain, self).__getitem__(k)
         except KeyError as e:
             if self.parent is None:
-                raise KeyError(e)
+                if k == 'geometry.parent_id':
+                    return self.id
+                if k in ['geometry.parent_grid_ratio',
+                         'geometry.i_parent_start', 'geometry.j_parent_start']:
+                    return 1
+                else:
+                    raise KeyError(e)
+            if k == 'geometry.parent_id':
+                return self.parent.id
+            if k in ['geometry.dx', 'geometry.dy']:
+                return self.parent[k] / self['geometry.parent_grid_ratio']
             return self.parent[k]
 
     def set_parent(self, ds):
@@ -110,8 +122,8 @@ class configurator(object):
                         helper(path + [k], conf[k])
 
         helper(None, conf)
-        for n in ds:
-            ds[n] = domain(ds[n])
+        for i, n in enumerate(ds):
+            ds[n] = domain(n, i + 1, ds[n])
         for n in ds:
             ds[n].set_parent(ds)
         return ds
@@ -124,8 +136,10 @@ class configurator(object):
     def __init__(self, conf):
         self.conf = confbox(self.remove_domain_info(conf))
         self.domains = self.gather_domains_info(conf)
-        self.domains_sequence = ['base'] + sorted(_ for _ in self.domains
-                                                  if _ != 'base')
+        self.domains_sequence = list(
+            map(lambda x: x[0], sorted([(n, self.domains[n].id)
+                                        for n in self.domains],
+                                       key=lambda x: x[1])))
 
     def gather_data(self, tags):
         def helper(t):
@@ -136,6 +150,9 @@ class configurator(object):
                 t = '.'.join(p[1:])
                 v = [self.domains[n][t]
                      for n in self.domains_sequence]
+            elif p[0] in self.domains:
+                t = '.'.join(p[1:])
+                v = self.domains[p[0]][t]
             else:
                 v = self.conf[t]
             return (p[-1], v)
@@ -167,6 +184,25 @@ class configurator(object):
             ])
         return self.generate_section('share', fields)
 
+    def generate_geogrid(self):
+        fields = self.gather_data([
+            'domains.geometry.parent_id',
+            'domains.geometry.parent_grid_ratio',
+            'domains.geometry.i_parent_start',
+            'domains.geometry.j_parent_start',
+            'domains.geometry.e_we',
+            'domains.geometry.e_sn',
+            'geometry.global.geog_data_res',
+            'geometry.global.map_proj',
+            'geometry.global.truelat1',
+            'geometry.global.truelat2',
+            'geometry.global.stand_lon',
+            'domains.geometry.dx',
+            'domains.geometry.dy',
+            'base.geometry.ref_lat',
+            'base.geometry.ref_lon',
+            ])
+        return self.generate_section('geogrid', fields)
 
     def generate_physics(self):
         pass
