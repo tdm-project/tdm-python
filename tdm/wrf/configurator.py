@@ -1,7 +1,9 @@
 # import yaml
 
 from datetime import datetime
-from .constants import DEFAULTS
+from .constants import (
+    DEFAULTS, SHARE_DEFAULT_FIELDS, GEOGRID_DEFAULT_FIELDS,
+    UNGRIB_DEFAULT_FIELDS, METGRID_DEFAULT_FIELDS)
 
 
 def merge_configs(base, update):
@@ -175,34 +177,20 @@ class configurator(object):
         return '&{}\n {}\n/\n'.format(sname, body)
 
     def generate_share(self):
-        fields = self.gather_data([
-            'dynamics.wrf_core', 'domains.max_dom',
-            'domains.timespans.start_date',
-            'domains.timespans.end_date',
-            'running.input.interval_seconds',
-            'conversions.geogrid.io_form_geogrid'
-            ])
+        fields = self.gather_data(SHARE_DEFAULT_FIELDS)
         return self.generate_section('share', fields)
 
     def generate_geogrid(self):
-        fields = self.gather_data([
-            'domains.geometry.parent_id',
-            'domains.geometry.parent_grid_ratio',
-            'domains.geometry.i_parent_start',
-            'domains.geometry.j_parent_start',
-            'domains.geometry.e_we',
-            'domains.geometry.e_sn',
-            'geometry.global.geog_data_res',
-            'geometry.global.map_proj',
-            'geometry.global.truelat1',
-            'geometry.global.truelat2',
-            'geometry.global.stand_lon',
-            'domains.geometry.dx',
-            'domains.geometry.dy',
-            'base.geometry.ref_lat',
-            'base.geometry.ref_lon',
-            ])
+        fields = self.gather_data(GEOGRID_DEFAULT_FIELDS)
         return self.generate_section('geogrid', fields)
+
+    def generate_ungrib(self):
+        fields = self.gather_data(UNGRIB_DEFAULT_FIELDS)
+        return self.generate_section('ungrib', fields)
+
+    def generate_metgrid(self):
+        fields = self.gather_data(METGRID_DEFAULT_FIELDS)
+        return self.generate_section('metgrid', fields)
 
     def generate_physics(self):
         pass
