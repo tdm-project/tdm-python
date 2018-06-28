@@ -45,6 +45,15 @@ class confbox(dict):
         for k, v in conf.items():
             self[k] = confbox(v) if isinstance(v, dict) else v
 
+    def __setitem__(self, k, v):
+        def set_deep(c, p, v):
+            if len(p) == 1:
+                return super(confbox, c).__setitem__(p[0], v)
+            if p[0] not in c:
+                c[p[0]] = confbox({})
+            return set_deep(c[p[0]], p[1:], v)
+        return set_deep(self, k.split('.'), v)
+
     def __getitem__(self, k):
         def get_deep(c, p):
             if len(p) == 1:
@@ -155,7 +164,7 @@ class configurator(object):
         for dk, v in argkv.items():
             dname, k = split_key(dk)
             if dname is None:
-                self[k] = v
+                self.conf[k] = v
             else:
                 if dname not in self.domains:
                     self.domains_sequence.append(dname)

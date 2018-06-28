@@ -2,6 +2,7 @@ import unittest
 import yaml
 from tdm.wrf import configurator
 
+
 def flatten_flat(assigned):
     f = []
     for k, v in assigned.items():
@@ -13,6 +14,7 @@ def flatten_flat(assigned):
                 f.append((k, v))
     return f
 
+
 def flatten_domains(path, assigned):
     f = []
     for k, v in assigned.items():
@@ -23,9 +25,9 @@ def flatten_domains(path, assigned):
         elif isinstance(v, dict):
             f = f + flatten_domains(path + '.' + k if path else k, v)
     return f
-    
-class test_configurator(unittest.TestCase):
 
+
+class test_configurator(unittest.TestCase):
 
     def check_minimal(self):
         with open('minimal.yaml') as f:
@@ -37,11 +39,33 @@ class test_configurator(unittest.TestCase):
             dn, k = kd[1:].split('.', 1)
             if k.find('parent') == -1:
                 self.assertEqual(c.domains[dn][k], v)
-        
+
+    def check_update(self):
+        with open('minimal.yaml') as f:
+            assigned = yaml.load(f.read())
+        c = configurator.make(assigned)
+        updates = [('@base.geometry.ref_lat', 80.22),
+                   ('@dom1.geometry.e_we', 202),
+                   ('@dom2.timespans.start.year', 2019),
+                   ('@dom2.timespans.start.month', 6),
+                   ('geometry.global.truelat1', 43),
+                   ('foobar.foo.bar', 'this is a string')]
+        c.update(dict(updates))
+        for kd, v in updates:
+            if kd.startswith('@'):
+                dn, k = kd[1:].split('.', 1)
+                if k.find('parent') == -1:
+                    self.assertEqual(c.domains[dn][k], v)
+            else:
+                self.assertEqual(c.conf[kd], v)
+
+
 def suite():
     suite_ = unittest.TestSuite()
     suite_.addTest(test_configurator('check_minimal'))
+    suite_.addTest(test_configurator('check_update'))
     return suite_
+
 
 if __name__ == '__main__':
     _RUNNER = unittest.TextTestRunner(verbosity=2)
