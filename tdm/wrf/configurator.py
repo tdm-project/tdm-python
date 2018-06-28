@@ -125,10 +125,12 @@ class configurator(object):
         helper(None, conf)
         for i, n in enumerate(ds):
             ds[n] = domain(n, i + 1, ds[n])
+
         for d in ds.values():
-            if d['geometry.parent'] is not None:
-                d.set_parent(ds[d['geometry.parent']])
-                del(d['geometry.parent'])
+            g = d['geometry']
+            if 'parent' in g:
+                d.set_parent(ds[g['parent']])
+                del(g['parent'])
         return ds
 
     @classmethod
@@ -143,6 +145,23 @@ class configurator(object):
             map(lambda x: x[0], sorted([(n, self.domains[n].id)
                                         for n in self.domains],
                                        key=lambda x: x[1])))
+
+    def update(self, argkv):
+        def split_key(dk):
+            if dk.startswith('@'):
+                return tuple(dk[1:].split('.', 1))
+            else:
+                return None, dk
+        for dk, v in argkv.items():
+            dname, k = split_key(dk)
+            if dname is None:
+                self[k] = v
+            else:
+                if dname not in self.domains:
+                    self.domains_sequence.append(dname)
+                    self.domains[dname] = domain(dname, len(self.domains), {})
+                    self.domains[dname].set_parent(self.domains['base'])
+                self.domains[dname][k] = v
 
     def gather_data(self, tags):
         def helper(t):
