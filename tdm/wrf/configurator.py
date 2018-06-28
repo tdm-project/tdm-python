@@ -90,9 +90,8 @@ class domain(confbox):
                 return self.parent[k] / self['geometry.parent_grid_ratio']
             return self.parent[k]
 
-    def set_parent(self, ds):
-        if 'parent' in self['geometry']:
-            self.parent = ds[self['geometry.parent']]
+    def set_parent(self, parent):
+        self.parent = parent
 
 
 class configurator(object):
@@ -126,8 +125,10 @@ class configurator(object):
         helper(None, conf)
         for i, n in enumerate(ds):
             ds[n] = domain(n, i + 1, ds[n])
-        for n in ds:
-            ds[n].set_parent(ds)
+        for d in ds.values():
+            if d['geometry.parent'] is not None:
+                d.set_parent(ds[d['geometry.parent']])
+                del(d['geometry.parent'])
         return ds
 
     @classmethod
