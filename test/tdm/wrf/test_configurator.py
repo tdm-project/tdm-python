@@ -36,7 +36,7 @@ class test_configurator(unittest.TestCase):
         for i, d in enumerate(c.domains_sequence):
             self.assertEqual(i + 1, c.domains[d].id)
         for k, v in flatten_global(assigned):
-            self.assertEqual(c.conf[k], v)
+            self.assertEqual(c[k], v)
         for kd, v in flatten_domains(assigned):
             dn, k = kd[1:].split('.', 1)
             if k.find('parent') == -1:
@@ -45,7 +45,7 @@ class test_configurator(unittest.TestCase):
                      'running.input.restart': False,
                      'physics.ishallow': 0}
         for k, v in test_vals.items():
-            self.assertEqual(v, c.conf[k])
+            self.assertEqual(v, c[k])
 
     def check_update(self):
         with open('minimal.yaml') as f:
@@ -64,7 +64,7 @@ class test_configurator(unittest.TestCase):
                 if k != 'parent':
                     self.assertEqual(c.domains[dn][k], v)
             else:
-                self.assertEqual(c.conf[kd], v)
+                self.assertEqual(c[kd], v)
 
 
 def suite():

@@ -109,7 +109,7 @@ class domain(confbox):
         self.parent = parent
 
 
-class configurator(object):
+class configurator(confbox):
 
     @staticmethod
     def gather_domains_info(conf):
@@ -129,7 +129,7 @@ class configurator(object):
             DEFAULTS, {} if assigned is None else assigned))
 
     def __init__(self, conf):
-        self.conf = confbox(conf['global'])
+        super(configurator, self).__init__(conf['global'])
         self.domains = self.gather_domains_info(conf)
         self.domains_sequence = list(
             map(lambda x: x[0], sorted([(n, self.domains[n].id)
@@ -145,7 +145,7 @@ class configurator(object):
         for dk, v in argkv.items():
             dname, k = split_key(dk)
             if dname is None:
-                self.conf[k] = v
+                self[k] = v
             else:
                 if dname not in self.domains:
                     self.domains_sequence.append(dname)
@@ -166,7 +166,7 @@ class configurator(object):
                 t = '.'.join(p[1:])
                 v = self.domains[p[0]][t]
             else:
-                v = self.conf[t]
+                v = self[t]
             return (p[-1], v)
         return dict(helper(_) for _ in tags)
 
@@ -192,7 +192,7 @@ class configurator(object):
 
     def generate_geogrid(self):
         fields = self.gather_data(GEOGRID_DEFAULT_FIELDS)
-        projection = self.conf['geometry.global.map_proj']
+        projection = self['geometry.global.map_proj']
         fileds = fields + self.gather_data(
             GEOMETRY_PROJECTION_FIELDS[projection])
         return self.generate_section('geogrid', fields)
