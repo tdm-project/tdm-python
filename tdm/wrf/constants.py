@@ -10,13 +10,24 @@ GEOGRID_DEFAULT_FIELDS = [
     'domains.geometry.parent_id',
     'domains.geometry.parent_grid_ratio',
     'domains.geometry.i_parent_start',
-    'domains.geometry.j_parent_start', 'domains.geometry.e_we',
-    'domains.geometry.e_sn', 'geometry.global.geog_data_res',
-    'geometry.global.map_proj', 'geometry.global.truelat1',
-    'geometry.global.truelat2', 'geometry.global.stand_lon',
-    'domains.geometry.dx', 'domains.geometry.dy', 'base.geometry.ref_lat',
-    'base.geometry.ref_lon'
+    'domains.geometry.j_parent_start',
+    'domains.geometry.e_we',
+    'domains.geometry.e_sn',
+    'domains.geometry.dx',
+    'domains.geometry.dy',    
 ]
+
+GEOMETRY_PROJECTION_FIELDS = {
+    'lambert' : [
+        'geometry.global.ref_lat',
+        'geometry.global.ref_lon',
+        'geometry.global.geog_data_res',
+        'geometry.global.truelat1',
+        'geometry.global.truelat2',
+        'geometry.global.stand_lon',
+    ]
+}
+
 
 UNGRIB_DEFAULT_FIELDS = [
     'conversions.ungrib.out_format',
@@ -30,20 +41,31 @@ METGRID_DEFAULT_FIELDS = [
 ]
 
 DEFAULTS = {
-    'dynamics': {
-        'wrf_core': 'ARW'
-    },
-    'geometry': {
-        'global': {
+    'global': {
+        'geometry': {
             'map_proj': 'lambert',
             'geog_data_res': 'default',
         },
-    },
-    'conversions': {
+        'dynamics': {
+            'wrf_core': 'ARW'
+        },
+        'running': {
+            'debug': {
+                'level': 0,
+            },
+            'input': {
+                'restart': False,
+            },
+            'history': {
+                'conf': {
+                    'outname': "/WPSRUN/wrfout_d<domain>_<date>.nc",
+                },
+            },
+        },
         'geogrid': {
             'io_form_geogrid': 2,
             'opt_output_from_geogrid_path': '.',
-            },
+        },
         'ungrib': {
             'out_format': 'WPS',
             'prefix': 'FILE',
@@ -53,64 +75,37 @@ DEFAULTS = {
             'io_form_metgrid': 2,
             'opt_metgrid_tbl_path': '/wrf/WPS/metgrid',
         },
-    },
-    'running': {
-        'debug': {
-            'level': 0,
-        },
-        'input': {
-            'restart': False,
-            'domains': {
-                'base': {
-                    'from_file': True
-                },
-            },
-        },
-        'history': {
-            'conf': {
-                'outname': "/WPSRUN/wrfout_d<domain>_<date>.nc",
-            },
-            'domains': {
-                'base': {
-                    'frames_per_outfile': 1
-                },
-            },
+        'physics': { # all default values
+            'swint_opt': 0,
+            'convtrans_avglen_m': 20, # unclear if used
+            'ishallow': 0,
+            'surface_input_source': 3,
+            'num_soil_layers': 5,
+            'num_land_cat': 21,
+            'maxiens': 1,
+            'maxens': 3,
+            'maxens2': 3,
+            'maxens3': 16,
+            'ensdim': 144,
+            'mp_zero_out': 0,
+            'usemonalb': False,
+            'mosaic_lu': 0,
+            'mosaic_soil': 0,
         },
     },
-    'physics': {
-        'domains': {
-            'base': {
-                'mp_physics': 8,
-                'ra_lw_physics': 4,
-                'ra_sw_physics': 4,
-                'radt': 20,
-                'sf_sfclay_physics': 5,
-                'sf_surface_physics': 3,
-                'bl_pbl_physics': 5,
-                'bldt': 0,
-                'cu_physics': 3,
-                'cu_diag': 1,
-                'cudt': 0,
-                'cu_rad_feedback': True,
-            }
-        },
-        'swint_opt': 1,
-        'convtrans_avglen_m': 20,
-        'ishallow': 1,
-        'surface_input_source': 1,
-        'num_soil_layers': 9,
-        'num_land_cat': 21,
-        'maxiens': 1,
-        'maxens': 3,
-        'maxens2': 3,
-        'maxens3': 16,
-        'ensdim': 144,
-        'mp_zero_out': 2,
-        'mp_zero_out_thresh': 1.e-12,
-        'usemonalb': True,
-        'mosaic_lu': 1,
-        'mosaic_soil': 1,
-        'seaice_threshold': 271.4,
-        'do_radar_ref': 1,
+    'domains': {
+        'base': { 
+            'mp_physics': 0,  
+            'ra_lw_physics': 0,
+            'ra_sw_physics': 0,
+            'sf_sfclay_physics': 0,
+            'sf_surface_physics': 0,
+            'bl_pbl_physics': 0,
+            'bldt': 0,
+            'cu_physics': 0,
+            'cu_diag': 0,
+            'cudt': 0,
+            'cu_rad_feedback': False,
+        }
     },
 }

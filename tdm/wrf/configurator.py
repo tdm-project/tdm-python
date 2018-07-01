@@ -3,7 +3,7 @@
 from datetime import datetime
 from .constants import (
     DEFAULTS, SHARE_DEFAULT_FIELDS, GEOGRID_DEFAULT_FIELDS,
-    UNGRIB_DEFAULT_FIELDS, METGRID_DEFAULT_FIELDS)
+    UNGRIB_DEFAULT_FIELDS, METGRID_DEFAULT_FIELDS, GEOMETRY_PROJECTION_FIELDS)
 
 
 def merge_configs(base, update):
@@ -23,6 +23,11 @@ def merge_configs(base, update):
 
 
 class confbox(dict):
+    """Holds configuration data as nesteed dictionaries.
+    
+    Confobox objects support direct multi level indexing, e.g.,
+    ``c['lev1.lev2.lev3'] = v``, both to assign and access values.
+    """
     @staticmethod
     def subconfbox(conf):
         for k in conf:
@@ -85,15 +90,16 @@ class domain(confbox):
         try:
             return super(domain, self).__getitem__(k)
         except KeyError as e:
+            # special case:  root domain
             if self.parent is None:
-                if k == 'geometry.parent_id':
+                if k == 'parent_id':
                     return self.id
                 if k in ['geometry.parent_grid_ratio',
                          'geometry.i_parent_start', 'geometry.j_parent_start']:
                     return 1
                 else:
                     raise KeyError(e)
-            if k == 'geometry.parent_id':
+            if k == 'parent_id':
                 return self.parent.id
             if k in ['geometry.dx', 'geometry.dy']:
                 return self.parent[k] / self['geometry.parent_grid_ratio']
@@ -104,43 +110,18 @@ class domain(confbox):
 
 
 class configurator(object):
-    @staticmethod
-    def remove_domain_info(conf):
-        if not isinstance(conf, dict):
-            return conf
-        return dict((k, configurator.remove_domain_info(conf[k]))
-                    for k in conf if k != 'domains')
 
     @staticmethod
     def gather_domains_info(conf):
-        ds = {}
+        domains = {}
+        for i, (dn, v) in enumerate(conf['domains'].items()):
+            domains[dn] = domain(dn, i + 1, v)
 
-        def wrap(p, o):
-            return o if not p else {p[0]: wrap(p[1:], o)}
-
-        def absorbe(path, conf):
-            for k in conf:
-                ds.setdefault(k, {})[path[0]] = wrap(path[1:], conf[k])
-
-        def helper(path, conf):
-            path = list() if path is None else path
-            for k in conf:
-                if k == 'domains':
-                    absorbe(path, conf[k])
-                else:
-                    if isinstance(conf[k], dict):
-                        helper(path + [k], conf[k])
-
-        helper(None, conf)
-        for i, n in enumerate(ds):
-            ds[n] = domain(n, i + 1, ds[n])
-
-        for d in ds.values():
-            g = d['geometry']
-            if 'parent' in g:
-                d.set_parent(ds[g['parent']])
-                del(g['parent'])
-        return ds
+        for v in domains.values():
+            if 'parent' in v:
+                v.set_parent(domains[v['parent']])
+                del(v['parent'])
+        return domains
 
     @classmethod
     def make(cls, assigned=None):
@@ -148,7 +129,7 @@ class configurator(object):
             DEFAULTS, {} if assigned is None else assigned))
 
     def __init__(self, conf):
-        self.conf = confbox(self.remove_domain_info(conf))
+        self.conf = confbox(conf['global'])
         self.domains = self.gather_domains_info(conf)
         self.domains_sequence = list(
             map(lambda x: x[0], sorted([(n, self.domains[n].id)
@@ -211,6 +192,9 @@ class configurator(object):
 
     def generate_geogrid(self):
         fields = self.gather_data(GEOGRID_DEFAULT_FIELDS)
+        projection = self.conf['geometry.global.map_proj']
+        fileds = fields + self.gather_data(
+            GEOMETRY_PROJECTION_FIELDS[projection])
         return self.generate_section('geogrid', fields)
 
     def generate_ungrib(self):
