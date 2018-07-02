@@ -29,10 +29,15 @@ def flatten_domains(assigned):
 
 class test_configurator(unittest.TestCase):
 
-    def check_minimal(self):
+    def setUp(self):
         with open('minimal.yaml') as f:
             assigned = yaml.load(f.read())
-        c = configurator.make(assigned)
+        self.assigned = assigned
+        self.c = configurator.make(assigned)
+
+    def check_minimal(self):
+        c = self.c
+        assigned = self.assigned
         for i, d in enumerate(c.domains_sequence):
             self.assertEqual(i + 1, c.domains[d].id)
         for k, v in flatten_global(assigned):
@@ -48,9 +53,7 @@ class test_configurator(unittest.TestCase):
             self.assertEqual(v, c[k])
 
     def check_update(self):
-        with open('minimal.yaml') as f:
-            assigned = yaml.load(f.read())
-        c = configurator.make(assigned)
+        c = self.c
         updates = [('@base.geometry.e_we', 131),
                    ('@dom1.geometry.e_we', 202),
                    ('@dom2.timespan.start.year', 2019),
@@ -66,11 +69,33 @@ class test_configurator(unittest.TestCase):
             else:
                 self.assertEqual(c[kd], v)
 
+    def check_generation(self):
+        c = self.c
+        share = c.generate_share()
+        geogrid = c.generate_geogrid()
+        ungrib = c.generate_ungrib()
+        metgrid = c.generate_metgrid()
+
+    def check_domains(self):
+        c = self.c
+        for dn, dv in c.domains.items():
+            self.assertEqual(dn, dv.name)
+        self.assertAlmostEqual(c.domains['base'].get_offset_wrt_base(),
+                               (0.0, 0.0))
+        self.assertAlmostEqual(c.domains['base'].get_extension(),
+                               (1200000, 2400000))
+        self.assertAlmostEqual(c.domains['dom1'].get_offset_wrt_base(),
+                               (288000.0, 600000.0))
+        self.assertAlmostEqual(c.domains['dom1'].get_extension(),
+                               (360000.0, 720000.0))
+
 
 def suite():
     suite_ = unittest.TestSuite()
     suite_.addTest(test_configurator('check_minimal'))
     suite_.addTest(test_configurator('check_update'))
+    suite_.addTest(test_configurator('check_generation'))
+    suite_.addTest(test_configurator('check_domains'))
     return suite_
 
 

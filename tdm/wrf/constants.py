@@ -1,13 +1,13 @@
 SHARE_DEFAULT_FIELDS = [
     'dynamics.wrf_core', 'domains.max_dom',
-    'domains.timespans.start_date',
-    'domains.timespans.end_date',
+    'domains.timespan.start_date',
+    'domains.timespan.end_date',
     'running.input.interval_seconds',
-    'conversions.geogrid.io_form_geogrid'
+    'geogrid.io_form_geogrid'
 ]
 
 GEOGRID_DEFAULT_FIELDS = [
-    'domains.geometry.parent_id',
+    'domains.parent_id',
     'domains.geometry.parent_grid_ratio',
     'domains.geometry.i_parent_start',
     'domains.geometry.j_parent_start',
@@ -19,25 +19,25 @@ GEOGRID_DEFAULT_FIELDS = [
 
 GEOMETRY_PROJECTION_FIELDS = {
     'lambert' : [
-        'geometry.global.ref_lat',
-        'geometry.global.ref_lon',
-        'geometry.global.geog_data_res',
-        'geometry.global.truelat1',
-        'geometry.global.truelat2',
-        'geometry.global.stand_lon',
+        'geometry.ref_lat',
+        'geometry.ref_lon',
+        'geometry.geog_data_res',
+        'geometry.truelat1',
+        'geometry.truelat2',
+        'geometry.stand_lon',
     ]
 }
 
 
 UNGRIB_DEFAULT_FIELDS = [
-    'conversions.ungrib.out_format',
-    'conversions.ungrib.prefix',
+    'ungrib.out_format',
+    'ungrib.prefix',
 ]
 
 METGRID_DEFAULT_FIELDS = [
-    'conversions.metgrid.fg_name',
-    'conversions.metgrid.io_form_metgrid',
-    'conversions.metgrid.opt_metgrid_tbl_path',
+    'metgrid.fg_name',
+    'metgrid.io_form_metgrid',
+    'metgrid.opt_metgrid_tbl_path',
 ]
 
 DEFAULTS = {

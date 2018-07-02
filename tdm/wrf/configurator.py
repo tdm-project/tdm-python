@@ -24,7 +24,7 @@ def merge_configs(base, update):
 
 class confbox(dict):
     """Holds configuration data as nesteed dictionaries.
-    
+
     Confobox objects support direct multi level indexing, e.g.,
     ``c['lev1.lev2.lev3'] = v``, both to assign and access values.
     """
@@ -107,6 +107,22 @@ class domain(confbox):
 
     def set_parent(self, parent):
         self.parent = parent
+
+    def get_offset_wrt_base(self):
+        # WRF uses fortran indices conventions
+        ox, oy = 0.0, 0.0
+        d = self
+        while d.parent is not None:
+            i_offset = d['geometry.i_parent_start'] - 1
+            j_offset = d['geometry.j_parent_start'] - 1
+            ox = ox + i_offset * d.parent['geometry.dx']
+            oy = oy + j_offset * d.parent['geometry.dy']
+            d = d.parent
+        return (ox, oy)
+
+    def get_extension(self):
+        return ((self['geometry.e_we'] - 1) * self['geometry.dx'],
+                (self['geometry.e_sn'] - 1) * self['geometry.dy'])
 
 
 class configurator(confbox):
@@ -192,9 +208,9 @@ class configurator(confbox):
 
     def generate_geogrid(self):
         fields = self.gather_data(GEOGRID_DEFAULT_FIELDS)
-        projection = self['geometry.global.map_proj']
-        fileds = fields + self.gather_data(
-            GEOMETRY_PROJECTION_FIELDS[projection])
+        projection = self['geometry.map_proj']
+        fields.update(self.gather_data(
+            GEOMETRY_PROJECTION_FIELDS[projection]))
         return self.generate_section('geogrid', fields)
 
     def generate_ungrib(self):
