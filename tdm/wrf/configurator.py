@@ -40,9 +40,9 @@ class confbox(dict):
         date = datetime(cbox.get('year', now.year),
                         cbox.get('month', now.month),
                         cbox.get('day', now.day),
-                        cbox.get('hour', now.hour),
-                        cbox.get('minute', now.minute),
-                        cbox.get('second', now.second))
+                        cbox.get('hour', 0),
+                        cbox.get('minute', 0),
+                        cbox.get('second', 0))
         return date.strftime("%Y-%m-%d_%H:%M:%S")
 
     def __init__(self, conf):
