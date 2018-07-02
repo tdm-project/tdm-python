@@ -7,5 +7,5 @@ setup(
     author='ALfred E. Neumann',
     author_email='aen@gmail.com',
     packages=['tdm', 'tdm.gfs', 'tdm.gfs.noaa', 'tdm.wrf'],
-    scripts=['bin/gfs_fetch', 'bin/wrf_configurator'],
+    scripts=['bin/gfs_fetch', 'bin/wrf_configurator', 'bin/link_grib'],
 )
