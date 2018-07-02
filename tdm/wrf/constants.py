@@ -13,8 +13,10 @@ GEOGRID_DEFAULT_FIELDS = [
     'domains.geometry.j_parent_start',
     'domains.geometry.e_we',
     'domains.geometry.e_sn',
-    'domains.geometry.dx',
-    'domains.geometry.dy',    
+    '@base.geometry.dx',
+    '@base.geometry.dy',
+    'geometry.geog_data_path',
+    'geometry.opt_geogrid_tbl_path',
 ]
 
 GEOMETRY_PROJECTION_FIELDS = {
@@ -24,7 +26,7 @@ GEOMETRY_PROJECTION_FIELDS = {
         'geometry.geog_data_res',
         'geometry.truelat1',
         'geometry.truelat2',
-        'geometry.stand_lon',
+        'geometry.stand_lon'
     ]
 }
 
@@ -45,6 +47,7 @@ DEFAULTS = {
         'geometry': {
             'map_proj': 'lambert',
             'geog_data_res': 'default',
+            'opt_geogrid_tbl_path': '/wrf/WPS/geogrid'
         },
         'dynamics': {
             'wrf_core': 'ARW'
