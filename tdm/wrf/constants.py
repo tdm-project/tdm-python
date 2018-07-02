@@ -13,6 +13,7 @@ GEOGRID_DEFAULT_FIELDS = [
     'domains.geometry.j_parent_start',
     'domains.geometry.e_we',
     'domains.geometry.e_sn',
+    'domains.geog_data_res',
     '@base.geometry.dx',
     '@base.geometry.dy',
     'geometry.geog_data_path',
@@ -46,7 +47,6 @@ DEFAULTS = {
     'global': {
         'geometry': {
             'map_proj': 'lambert',
-            'geog_data_res': 'default',
             'opt_geogrid_tbl_path': '/wrf/WPS/geogrid'
         },
         'dynamics': {
