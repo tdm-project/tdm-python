@@ -6,7 +6,6 @@ class configuration_checker(object):
     def check(self):
         self.faults = self.faults + self.check_geometry()
         return len(self.faults) == 0
-            
 
     def check_geometry(self):
         faults = []
@@ -16,6 +15,7 @@ class configuration_checker(object):
             if d.parent is not None:
                 f = n_cells // p_grid_ratio
                 if int(f * p_grid_ratio) != n_cells:
-                    faults.append('Domain %s grid does not fit in its parent grid' %
-                                  d.name)
+                    faults.append(
+                        'Domain %s grid does not fit in its parent grid' %
+                        d.name)
         return faults
