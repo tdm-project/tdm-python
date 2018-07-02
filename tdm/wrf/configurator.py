@@ -125,6 +125,13 @@ class domain(confbox):
                 (self['geometry.e_sn'] - 1) * self['geometry.dy'])
 
 
+def split_key(dk):
+    if dk.startswith('@'):
+        return tuple(dk[1:].split('.', 1))
+    else:
+        return None, dk
+
+
 class configurator(confbox):
 
     @staticmethod
@@ -152,22 +159,27 @@ class configurator(confbox):
                                         for n in self.domains],
                                        key=lambda x: x[1])))
 
+    def __getitem__(self, k):
+        dn, k = split_key(k)
+        if dn is None:
+            return super(configurator, self).__getitem__(k)
+        else:
+            return self.domains[dn][k]
+
+    def __setitem__(self, k, v):
+        dn, k = split_key(k)
+        if dn is None:
+            return super(configurator, self).__setitem__(k, v)
+        else:
+            if dn not in self.domains:
+                self.domains_sequence.append(dn)
+                self.domains[dn] = domain(dn, len(self.domains), {})
+                self.domains[dn].set_parent(self.domains['base'])
+            self.domains[dn][k] = v
+
     def update(self, argkv):
-        def split_key(dk):
-            if dk.startswith('@'):
-                return tuple(dk[1:].split('.', 1))
-            else:
-                return None, dk
-        for dk, v in argkv.items():
-            dname, k = split_key(dk)
-            if dname is None:
-                self[k] = v
-            else:
-                if dname not in self.domains:
-                    self.domains_sequence.append(dname)
-                    self.domains[dname] = domain(dname, len(self.domains), {})
-                    self.domains[dname].set_parent(self.domains['base'])
-                self.domains[dname][k] = v
+        for k, v in argkv.items():
+            self[k] = v
 
     def gather_data(self, tags):
         def helper(t):
