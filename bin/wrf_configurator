@@ -71,7 +71,7 @@ def make_parser():
     )
     parser.add_argument('-V', '--version', action='version',
                         version=version,
-                        help='print version number and exit')
+                        help='Print version number and exit')
     parser.add_argument("--summarize", action="store_true",
                         help="Summarize configuration info and exit")
     parser.add_argument('--target', metavar="|".join(SUPPORTED_TARGETS),
@@ -82,6 +82,8 @@ def make_parser():
                         type=argparse.FileType('w', encoding='UTF-8'))
     parser.add_argument('-D', metavar='K=V', action=UpdateMap,
                         help='Add/update configuration item.')
+    parser.add_argument('-P', '--print', metavar='K', action='append',
+                        help='Print configuration value for key K.')
     return parser
 
 
@@ -114,11 +116,17 @@ def main(argv):
         for f in checker.faults:
             print(f)
         exit(1)
-    
+
     if args.summarize:
         s = summarizer(config)
         print(s.summarize())
         exit(0)
+
+    if args.extract:
+        for k in args.extract:
+            print('{}'.format(config[k]))
+        exit(0)
+
     if args.target == 'WPS':
         write_wps(config, args.ofile)
 
