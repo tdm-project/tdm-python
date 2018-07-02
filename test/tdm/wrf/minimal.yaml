@@ -1,0 +1,47 @@
+# Minimalistic configuration example
+global:
+  geometry:
+    ref_lat: 40.21
+    ref_lon:  9.00
+    truelat1: 38.00
+    truelat2: 42.00
+    stand_lon: 9.00
+    map_proj: 'lambert'
+    geog_data_res: 'default'
+  running:
+    input:
+      interval_seconds: 10800
+    
+domains:
+  base:
+    geometry:
+      dx: 12000
+      dy: 12000
+      e_we: 101
+      e_sn: 201
+    timespan:
+      start:
+        year: 2018
+        month: 6
+        day: 18 
+        hour: 0
+        minute: 0
+        second: 0
+      end:
+        year: 2018
+        month: 6
+        day: 18 
+        hour: 6
+    running:
+      history:
+        interval: 60 # mins
+        
+  # a nested domain
+  dom1:
+    parent: base
+    geometry:
+      parent_grid_ratio: 3
+      i_parent_start: 25
+      j_parent_start: 51
+      e_we: 91 # these are 30 coarse grid steps -> i-> {25, 55}
+      e_sn: 181 # these are 60 coarse grid steps -> i-> {51, 111}      
