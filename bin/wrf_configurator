@@ -122,8 +122,8 @@ def main(argv):
         print(s.summarize())
         exit(0)
 
-    if args.extract:
-        for k in args.extract:
+    if args.print:
+        for k in args.print:
             print('{}'.format(config[k]))
         exit(0)
 
