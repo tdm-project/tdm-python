@@ -1,6 +1,6 @@
 import unittest
 import yaml
-from tdm.wrf import configurator
+from tdm.wrf import configurator, configuration_checker
 
 
 def flatten_flat(assigned):
@@ -69,6 +69,16 @@ class test_configurator(unittest.TestCase):
             else:
                 self.assertEqual(c[kd], v)
 
+    def check_checker(self):
+        c = self.c
+        cc = configuration_checker(c)
+        self.assertTrue(cc.check())
+        updates = [('@dom2.geometry.e_we', 19),
+                   ('@dom2.geometry.parent_grid_ratio', 7)]
+        c.update(dict(updates))
+        cc = configuration_checker(c)
+        self.assertFalse(cc.check())
+
     def check_generation(self):
         c = self.c
         share = c.generate_share()
@@ -96,6 +106,7 @@ def suite():
     suite_.addTest(test_configurator('check_update'))
     suite_.addTest(test_configurator('check_generation'))
     suite_.addTest(test_configurator('check_domains'))
+    suite_.addTest(test_configurator('check_checker'))
     return suite_
 
 

@@ -5,6 +5,8 @@ import os
 import argparse
 import yaml
 from tdm.wrf import configurator
+from tdm.wrf import summarizer
+from tdm.wrf import configuration_checker
 from tdm import VERSION as version
 
 
@@ -70,14 +72,16 @@ def make_parser():
     parser.add_argument('-V', '--version', action='version',
                         version=version,
                         help='print version number and exit')
-    parser.add_argument(
-        '--target', metavar="|".join(SUPPORTED_TARGETS),
-        choices=SUPPORTED_TARGETS, default='WPS')
+    parser.add_argument("--summarize", action="store_true",
+                        help="Summarize configuration info and exit")
+    parser.add_argument('--target', metavar="|".join(SUPPORTED_TARGETS),
+                        choices=SUPPORTED_TARGETS, default='WPS')
     parser.add_argument('--config',
                         type=argparse.FileType('r', encoding='UTF-8'))
     parser.add_argument('--ofile',
                         type=argparse.FileType('w', encoding='UTF-8'))
-    parser.add_argument('-D', metavar='K=V', action=UpdateMap)
+    parser.add_argument('-D', metavar='K=V', action=UpdateMap,
+                        help='Add/update configuration item.')
     return parser
 
 
@@ -104,11 +108,19 @@ def main(argv):
     config = configurator.make(yaml.load(args.config.read()))
     if args.D:
         config.update(args.D)
+    checker = configuration_checker(config)
+    if not checker.check():
+        print("Faults in the provided configuration")
+        for f in checker.faults:
+            print(f)
+        exit(1)
+    
+    if args.summarize:
+        s = summarizer(config)
+        print(s.summarize())
+        exit(0)
     if args.target == 'WPS':
         write_wps(config, args.ofile)
-    print(config.conf)
-    for dn, v in config.domains.items():
-        print(dn, v)
 
 
 if __name__ == "__main__":
