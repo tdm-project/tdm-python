@@ -1,9 +1,12 @@
 # import yaml
 
 from datetime import datetime
+from decimal import Decimal
+from fractions import Fraction
 from .constants import (
     DEFAULTS, SHARE_DEFAULT_FIELDS, GEOGRID_DEFAULT_FIELDS,
-    UNGRIB_DEFAULT_FIELDS, METGRID_DEFAULT_FIELDS, GEOMETRY_PROJECTION_FIELDS)
+    UNGRIB_DEFAULT_FIELDS, METGRID_DEFAULT_FIELDS, GEOMETRY_PROJECTION_FIELDS,
+    TIME_CONTROL_DEFAULT_FIELDS, DOMAINS_DEFAULT_FIELDS)
 
 
 def merge_configs(base, update):
@@ -76,6 +79,17 @@ class confbox(dict):
             return self.build_date(self['start'])
         if k == 'end_date' and 'end' in self:
             return self.build_date(self['end'])
+        if k == 'time_step_seconds' and 'time_step' in self:
+            v = Decimal("%s" % self['time_step'])
+            return int(v.to_integral_exact())
+        if k == 'time_step_fract_num' and 'time_step' in self:
+            v = Decimal("%s" % self['time_step'])
+            v = Fraction(v - v.to_integral_exact())
+            return v.numerator
+        if k == 'time_step_fract_den' and 'time_step' in self:
+            v = Decimal("%s" % self['time_step'])
+            v = Fraction(v - v.to_integral_exact())
+            return v.denominator
         raise KeyError(k)
 
 
@@ -90,12 +104,16 @@ class domain(confbox):
         try:
             return super(domain, self).__getitem__(k)
         except KeyError as e:
+            if k == 'geometry.grid_id':
+                return self.id
             # special case:  root domain
             if self.parent is None:
                 if k == 'parent_id':
                     return self.id
-                if k in ['geometry.parent_grid_ratio',
-                         'geometry.i_parent_start', 'geometry.j_parent_start']:
+                elif k in ['running.parent_time_step_ratio',
+                           'geometry.parent_grid_ratio',
+                           'geometry.i_parent_start',
+                           'geometry.j_parent_start']:
                     return 1
                 else:
                     raise KeyError(e)
@@ -182,7 +200,13 @@ class configurator(confbox):
             self[k] = v
 
     def gather_data(self, tags):
+        def normalize(t):
+            if isinstance(t, tuple):
+                return t
+            else:
+                return (t, t.split('.')[-1])
         def helper(t):
+            t, k = t
             if t == 'domains.max_dom':
                 return ('max_dom', len(self.domains))
             p = t.split('.')
@@ -195,8 +219,8 @@ class configurator(confbox):
                 v = self.domains[p[0]][t]
             else:
                 v = self[t]
-            return (p[-1], v)
-        return dict(helper(_) for _ in tags)
+            return (k, v)
+        return dict(helper(normalize(_)) for _ in tags)
 
     def generate_section(self, sname, fields):
 
@@ -211,7 +235,6 @@ class configurator(confbox):
                 return "'{}'".format(v)
         body = ',\n '.join('{} = {}'.format(fn, format_value(fields[fn]))
                            for fn in fields)
-
         return '&{}\n {}\n/\n'.format(sname, body)
 
     def generate_share(self):
@@ -233,12 +256,23 @@ class configurator(confbox):
         fields = self.gather_data(METGRID_DEFAULT_FIELDS)
         return self.generate_section('metgrid', fields)
 
+    def generate_fdda(self):
+        fields = self.gather_data(FDDA_DEFAULT_FIELDS)
+        return self.generate_section('fdda', fields)
+
+    def generate_domains(self):
+        fields = self.gather_data(DOMAINS_DEFAULT_FIELDS)
+        return self.generate_section('domains', fields)        
+        
+
     def generate_physics(self):
         pass
+
     def generate_time_control(self):
-        pass
-    def generate_domains(self):
-        pass
+        fields = self.gather_data(TIME_CONTROL_DEFAULT_FIELDS)
+        return self.generate_section('time_control', fields)
+        
+        
     def generate_dynamics(self):
         pass
     def generate_boundary_control(self):

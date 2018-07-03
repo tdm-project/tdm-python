@@ -46,7 +46,7 @@ class test_configurator(unittest.TestCase):
             dn, k = kd[1:].split('.', 1)
             if k.find('parent') == -1:
                 self.assertEqual(c.domains[dn][k], v)
-        test_vals = {'geogrid.io_form_geogrid': 2,
+        test_vals = {'geogrid.io_form': 2,
                      'running.input.restart': False,
                      'physics.ishallow': 0}
         for k, v in test_vals.items():
@@ -69,6 +69,21 @@ class test_configurator(unittest.TestCase):
             else:
                 self.assertEqual(c[kd], v)
 
+    def check_time_step(self):
+        c = self.c
+        v = 44.1902
+        iv, iv_f_n, iv_f_d = 44, 951, 5000
+        c.update({'global.running.time_step': v})
+        self.assertEqual(c['global.running.time_step_seconds'], iv)
+        self.assertEqual(c['global.running.time_step_fract_num'], iv_f_n)
+        self.assertEqual(c['global.running.time_step_fract_den'], iv_f_d)        
+        v = 44
+        iv, iv_f_n, iv_f_d = 44, 0, 1
+        c.update({'global.running.time_step': v})
+        self.assertEqual(c['global.running.time_step_seconds'], iv)
+        self.assertEqual(c['global.running.time_step_fract_num'], iv_f_n)
+        self.assertEqual(c['global.running.time_step_fract_den'], iv_f_d)        
+            
     def check_checker(self):
         c = self.c
         cc = configuration_checker(c)
@@ -85,6 +100,8 @@ class test_configurator(unittest.TestCase):
         geogrid = c.generate_geogrid()
         ungrib = c.generate_ungrib()
         metgrid = c.generate_metgrid()
+        time_control = c.generate_time_control()
+        domains = c.generate_domains()
 
     def check_domains(self):
         c = self.c
@@ -104,6 +121,7 @@ def suite():
     suite_ = unittest.TestSuite()
     suite_.addTest(test_configurator('check_minimal'))
     suite_.addTest(test_configurator('check_update'))
+    suite_.addTest(test_configurator('check_time_step'))    
     suite_.addTest(test_configurator('check_generation'))
     suite_.addTest(test_configurator('check_domains'))
     suite_.addTest(test_configurator('check_checker'))
