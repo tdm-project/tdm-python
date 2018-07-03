@@ -60,8 +60,7 @@ class noaa_fetcher(object):
         LOGGER.info('It took %s secs to fetch %s',
                     dt.total_seconds(), fname)
         return target
-
-    def fetch(self, res, tdir, pattern='gfs.t%Hz.pgrb2full',
+    def fetch(self, res, tdir, pattern='gfs.t%Hz.pgrb2',
               nthreads=4, tsleep=300):
         def recover_results(fut_by_name):
             failed = []
@@ -80,7 +79,8 @@ class noaa_fetcher(object):
         pre = self.date.strftime(pattern) + '.' + res
         LOGGER.info('Fetching %s/%s into %s', self.ds, pre, tdir)
         while not self.is_dataset_ready():
-            LOGGER.info('Dataset %s not ready, sleeping for %d sec', tsleep)
+            LOGGER.info('Dataset %s not ready, sleeping for %d sec',
+                        self.ds, tsleep)
             time.sleep(tsleep)
         files = [f for f in self.list_files_in_path(ds_path)
                  if f.startswith(pre)]
