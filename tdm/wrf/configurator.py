@@ -244,6 +244,7 @@ class configurator(confbox):
     def generate_geogrid(self):
         fields = self.gather_data(GEOGRID_DEFAULT_FIELDS)
         projection = self['geometry.map_proj']
+        fields.update([('map_proj', self['geometry.map_proj'])])
         fields.update(self.gather_data(
             GEOMETRY_PROJECTION_FIELDS[projection]))
         return self.generate_section('geogrid', fields)
