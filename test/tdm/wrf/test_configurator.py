@@ -59,6 +59,8 @@ class test_configurator(unittest.TestCase):
                    ('@dom2.timespan.start.year', 2019),
                    ('@dom2.timespan.start.month', 6),
                    ('geometry.truelat1', 43),
+                   ('physics.num_soil_layers', 4),
+                   ('physics.num_land_cat', 22),
                    ('foobar.foo.bar', 'this is a string')]
         c.update(dict(updates))
         for kd, v in updates:
@@ -76,14 +78,14 @@ class test_configurator(unittest.TestCase):
         c.update({'global.running.time_step': v})
         self.assertEqual(c['global.running.time_step_seconds'], iv)
         self.assertEqual(c['global.running.time_step_fract_num'], iv_f_n)
-        self.assertEqual(c['global.running.time_step_fract_den'], iv_f_d)        
+        self.assertEqual(c['global.running.time_step_fract_den'], iv_f_d)
         v = 44
         iv, iv_f_n, iv_f_d = 44, 0, 1
         c.update({'global.running.time_step': v})
         self.assertEqual(c['global.running.time_step_seconds'], iv)
         self.assertEqual(c['global.running.time_step_fract_num'], iv_f_n)
-        self.assertEqual(c['global.running.time_step_fract_den'], iv_f_d)        
-            
+        self.assertEqual(c['global.running.time_step_fract_den'], iv_f_d)
+
     def check_checker(self):
         c = self.c
         cc = configuration_checker(c)
@@ -102,6 +104,12 @@ class test_configurator(unittest.TestCase):
         metgrid = c.generate_metgrid()
         time_control = c.generate_time_control()
         domains = c.generate_domains()
+        physics = c.generate_physics()
+        fdda = c.generate_fdda()
+        dynamics = c.generate_dynamics()
+        bdy_control = c.generate_bdy_control()
+        grib2 = c.generate_grib2()
+        namelist_quilt = c.generate_namelist_quilt()
 
     def check_domains(self):
         c = self.c
@@ -121,7 +129,7 @@ def suite():
     suite_ = unittest.TestSuite()
     suite_.addTest(test_configurator('check_minimal'))
     suite_.addTest(test_configurator('check_update'))
-    suite_.addTest(test_configurator('check_time_step'))    
+    suite_.addTest(test_configurator('check_time_step'))
     suite_.addTest(test_configurator('check_generation'))
     suite_.addTest(test_configurator('check_domains'))
     suite_.addTest(test_configurator('check_checker'))

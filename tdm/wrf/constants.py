@@ -46,8 +46,18 @@ FDDA_DEFAULT_FIELDS = [
 ]
 
 TIME_CONTROL_DEFAULT_FIELDS = [
-    'domains.timespan.start_date',
-    'domains.timespan.end_date',
+    ('domains.timespan.start.year', 'start_year'),
+    ('domains.timespan.start.month', 'start_month'),
+    ('domains.timespan.start.day', 'start_day'),
+    ('domains.timespan.start.hour', 'start_hour'),
+    ('domains.timespan.start.minute', 'start_minute'),
+    ('domains.timespan.start.second', 'start_second'),
+    ('domains.timespan.end.year', 'end_year'),
+    ('domains.timespan.end.month', 'end_month'),
+    ('domains.timespan.end.day', 'end_day'),
+    ('domains.timespan.end.hour', 'end_hour'),
+    ('domains.timespan.end.minute', 'end_minute'),
+    ('domains.timespan.end.second', 'end_second'),
     'running.input.interval_seconds',
     ('domains.running.history.interval', 'history_interval'),
     ('running.history.io_form', 'io_form_history'),
@@ -65,29 +75,80 @@ DOMAINS_DEFAULT_FIELDS = [
     ('running.time_step_seconds', 'time_step'),
     'running.time_step_fract_num',
     'running.time_step_fract_den',
+    'running.feedback',
+    'running.smooth_option',
     'domains.max_dom',
     'domains.parent_id',
     'domains.geometry.grid_id',
     'domains.geometry.e_vert',
     'domains.geometry.e_we',
     'domains.geometry.e_sn',
+    'domains.geometry.dx',
+    'domains.geometry.dy',
     'domains.geometry.i_parent_start',
     'domains.geometry.j_parent_start',
     'domains.geometry.parent_grid_ratio',
     'domains.running.parent_time_step_ratio',
     'real.num_metgrid_levels',
     'real.num_metgrid_soil_levels',
+    'real.eta_levels'
 ]
 
+PHYSICS_DEFAULT_FIELDS = [
+    ('domains.physics.mp', 'mp_physics'),
+    ('domains.physics.ra_lw', 'ra_lw_physics'),
+    ('domains.physics.ra_sw', 'ra_sw_physics'),
+    'domains.physics.radt',
+    ('domains.physics.sf_sfclay', 'sf_sfclay_physics'),
+    ('domains.physics.sf_surface', 'sf_surface_physics'),
+    ('domains.physics.bl_pbl', 'bl_pbl_physics'),
+    ('domains.physics.cu', 'cu_physics'),
+    'domains.physics.cudt',
+    'physics.num_soil_layers',
+    'physics.num_land_cat',
+    'physics.surface_input_source',
+]
+
+DYNAMICS_DEFAULT_FIELDS = [
+    'dynamics.rk_ord',
+    'domains.dynamics.diff_opt',
+    'domains.dynamics.km_opt',
+    'domains.dynamics.non_hydrostatic',
+]
+
+BOUNDARY_CONTROL_FIELDS = [
+    'geometry.boundary.spec_bdy_width',
+    'geometry.boundary.spec_zone',
+    'geometry.boundary.relax_zone',
+    'domains.geometry.boundary.specified',
+    'domains.geometry.boundary.nested',
+]
+
+
+GRIB2_DEFAULT_FIELDS = [
+]
+
+NAMELIST_QUILT_DEFAULT_FIELDS = [
+    'running.mpi.nio_tasks_per_group',
+    'running.mpi.nio_groups'
+]
 
 DEFAULTS = {
     'global': {
         'geometry': {
             'map_proj': 'lambert',
-            'opt_geogrid_tbl_path': '/wrf/WPS/geogrid'
+            'opt_geogrid_tbl_path': '/wrf/WPS/geogrid',
+            'boundary': {
+                'spec_bdy_width': 5,
+                'spec_zone': 1,
+                'relax_zone': 4,
+                'constant_bc': False,
+                'spec_exp': 0.33,
+            },
         },
         'dynamics': {
-            'wrf_core': 'ARW'
+            'wrf_core': 'ARW',
+            'rk_ord': 3,
         },
         'running': {
             'debug': {
@@ -104,6 +165,11 @@ DEFAULTS = {
                 'io_form': 2,
             },
             'feedback': 0,
+            'smooth_option': 2,
+            'mpi': {
+                'nio_tasks_per_group': 0,
+                'nio_groups': 1,
+            },
         },
         'geogrid': {
             'io_form': 2,
@@ -122,7 +188,7 @@ DEFAULTS = {
             'swint_opt': 0,
             'convtrans_avglen_m': 20,
             'ishallow': 0,
-            'surface_input_source': 3,
+            'surface_input_source': 1,
             'num_soil_layers': 5,
             'num_land_cat': 21,
             'maxiens': 1,
@@ -138,6 +204,24 @@ DEFAULTS = {
     },
     'domains': {
         'base': {
+            'timespan': {
+                'start': {
+                    'year': 0,
+                    'month': 0,
+                    'day': 0,
+                    'hour': 0,
+                    'minute': 0,
+                    'second': 0,
+                },
+                'end': {
+                    'year': 0,
+                    'month': 0,
+                    'day': 0,
+                    'hour': 0,
+                    'minute': 0,
+                    'second': 0,
+                },
+            },
             'running': {
                 'output': {
                     'frames_per_outfile': 1,
@@ -147,17 +231,23 @@ DEFAULTS = {
                 },
             },
             'physics': {
-                'mp_physics': 0,
-                'ra_lw_physics': 0,
-                'ra_sw_physics': 0,
-                'sf_sfclay_physics': 0,
-                'sf_surface_physics': 0,
-                'bl_pbl_physics': 0,
+                'mp': 0,
+                'ra_lw': 0,
+                'ra_sw': 0,
+                'sf_sfclay': 0,
+                'sf_surface': 0,
+                'bl_pbl': 0,
                 'bldt': 0,
-                'cu_physics': 0,
+                'cu': 0,
                 'cu_diag': 0,
                 'cudt': 0,
+                'radt': 0,
                 'cu_rad_feedback': False,
+            },
+            'dynamics': {
+                'diff_opt': 1,
+                'km_opt': 1,
+                'non_hydrostatic': True,
             },
         },
     },

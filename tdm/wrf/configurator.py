@@ -6,7 +6,9 @@ from fractions import Fraction
 from .constants import (
     DEFAULTS, SHARE_DEFAULT_FIELDS, GEOGRID_DEFAULT_FIELDS,
     UNGRIB_DEFAULT_FIELDS, METGRID_DEFAULT_FIELDS, GEOMETRY_PROJECTION_FIELDS,
-    TIME_CONTROL_DEFAULT_FIELDS, DOMAINS_DEFAULT_FIELDS)
+    TIME_CONTROL_DEFAULT_FIELDS, DOMAINS_DEFAULT_FIELDS, FDDA_DEFAULT_FIELDS,
+    PHYSICS_DEFAULT_FIELDS, DYNAMICS_DEFAULT_FIELDS, BOUNDARY_CONTROL_FIELDS,
+    GRIB2_DEFAULT_FIELDS, NAMELIST_QUILT_DEFAULT_FIELDS)
 
 
 def merge_configs(base, update):
@@ -210,6 +212,11 @@ class configurator(confbox):
             t, k = t
             if t == 'domains.max_dom':
                 return ('max_dom', len(self.domains))
+            if t == 'domains.geometry.boundary.specified':
+                return ('specified',
+                        [n == 'base' for n in self.domains_sequence])
+            if t == 'domains.geometry.boundary.nested':
+                return ('nested', [n != 'base' for n in self.domains_sequence])
             p = t.split('.')
             if p[0] == 'domains':
                 t = '.'.join(p[1:])
@@ -239,10 +246,10 @@ class configurator(confbox):
         def format_value(v):
             if isinstance(v, list):
                 return ', '.join(map(format_value, v))
-            elif isinstance(v, (int, float)):
-                return '{}'.format(v)
             elif isinstance(v, bool):
                 return '.true.' if v else '.false.'
+            elif isinstance(v, (int, float)):
+                return '{}'.format(v)
             else:
                 return "'{}'".format(v)
         body = ',\n '.join('{} = {}'.format(fn, format_value(fields[fn]))
@@ -289,16 +296,14 @@ class configurator(confbox):
         fields = self.gather_data(DYNAMICS_DEFAULT_FIELDS)
         return self.generate_section('dynamics', fields)
 
-    def generate_boundary_control(self):
+    def generate_bdy_control(self):
         fields = self.gather_data(BOUNDARY_CONTROL_FIELDS)
         return self.generate_section('bdy_control', fields)
 
-    def generate_namelist_quilt(self):
-        fields = self.gather_data(['nio_tasks_per_group', 'nio_groups'])
-        return self.generate_section('namelist_quilt', fields)
-
-
     def generate_grib2(self):
-        return self.generate_section('grib2', {})
-            
+        fields = self.gather_data(GRIB2_DEFAULT_FIELDS)
+        return self.generate_section('grib2', fields)
 
+    def generate_namelist_quilt(self):
+        fields = self.gather_data(NAMELIST_QUILT_DEFAULT_FIELDS)
+        return self.generate_section('namelist_quilt', fields)
