@@ -83,7 +83,7 @@ class noaa_fetcher(object):
                         self.ds, tsleep)
             time.sleep(tsleep)
         files = [f for f in self.list_files_in_path(ds_path)
-                 if f.startswith(pre)]
+                 if f.startswith(pre) and not f.endswith('.idx')]
         begin = datetime.datetime.now()
         with futures.ThreadPoolExecutor(max_workers=nthreads) as executor:
             for i in range(self.FETCH_ATTEMPTS):
