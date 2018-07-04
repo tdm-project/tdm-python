@@ -199,12 +199,13 @@ class configurator(confbox):
         for k, v in argkv.items():
             self[k] = v
 
-    def gather_data(self, tags):
+    def gather_data(self, tags, ignore_if_missing=True):
         def normalize(t):
             if isinstance(t, tuple):
                 return t
             else:
                 return (t, t.split('.')[-1])
+
         def helper(t):
             t, k = t
             if t == 'domains.max_dom':
@@ -220,7 +221,18 @@ class configurator(confbox):
             else:
                 v = self[t]
             return (k, v)
-        return dict(helper(normalize(_)) for _ in tags)
+
+        def wrap_helper(t):
+            try:
+                return helper(t)
+            except KeyError as e:
+                if ignore_if_missing:
+                    return (None, None)
+                else:
+                    raise e
+
+        return dict(_ for _ in (wrap_helper(normalize(_)) for _ in tags)
+                    if _[0] is not None)
 
     def generate_section(self, sname, fields):
 
@@ -263,28 +275,30 @@ class configurator(confbox):
 
     def generate_domains(self):
         fields = self.gather_data(DOMAINS_DEFAULT_FIELDS)
-        return self.generate_section('domains', fields)        
-        
+        return self.generate_section('domains', fields)
 
     def generate_physics(self):
-        pass
+        fields = self.gather_data(PHYSICS_DEFAULT_FIELDS)
+        return self.generate_section('physics', fields)
 
     def generate_time_control(self):
         fields = self.gather_data(TIME_CONTROL_DEFAULT_FIELDS)
         return self.generate_section('time_control', fields)
-        
-        
+
     def generate_dynamics(self):
-        pass
+        fields = self.gather_data(DYNAMICS_DEFAULT_FIELDS)
+        return self.generate_section('dynamics', fields)
+
     def generate_boundary_control(self):
-        pass
+        fields = self.gather_data(BOUNDARY_CONTROL_FIELDS)
+        return self.generate_section('bdy_control', fields)
+
     def generate_namelist_quilt(self):
         fields = self.gather_data(['nio_tasks_per_group', 'nio_groups'])
         return self.generate_section('namelist_quilt', fields)
-    def generate_fdda(self):
-        return self.generate_section('fdda', {})
+
+
     def generate_grib2(self):
         return self.generate_section('grib2', {})
-    def generate_wsp_namelist(self, fname='namelist.wsp'):
-        pass
+            
 
