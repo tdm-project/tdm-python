@@ -91,7 +91,8 @@ DOMAINS_DEFAULT_FIELDS = [
     'domains.running.parent_time_step_ratio',
     'real.num_metgrid_levels',
     'real.num_metgrid_soil_levels',
-    'real.eta_levels'
+    'real.eta_levels',
+    'running.parallel.numtiles',
 ]
 
 PHYSICS_DEFAULT_FIELDS = [
@@ -129,8 +130,8 @@ GRIB2_DEFAULT_FIELDS = [
 ]
 
 NAMELIST_QUILT_DEFAULT_FIELDS = [
-    'running.mpi.nio_tasks_per_group',
-    'running.mpi.nio_groups'
+    'running.parallel.nio_tasks_per_group',
+    'running.parallel.nio_groups'
 ]
 
 DEFAULTS = {
@@ -166,9 +167,10 @@ DEFAULTS = {
             },
             'feedback': 0,
             'smooth_option': 2,
-            'mpi': {
+            'parallel': {
                 'nio_tasks_per_group': 0,
                 'nio_groups': 1,
+                'numtiles': 1,                
             },
         },
         'geogrid': {
@@ -227,7 +229,7 @@ DEFAULTS = {
                     'frames_per_outfile': 1,
                 },
                 'input': {
-                    'input_from_file': False,
+                    'input_from_file': True,
                 },
             },
             'physics': {
