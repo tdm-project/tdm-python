@@ -44,8 +44,14 @@ def make_parser():
         help="Number of parallel download threads, defaults to 10"
     )
     parser.add_argument(
-        '--target-directory', metavar='DIR', type=str, default='./GFS_FETCHED',
+        '--target-directory', metavar='DIR', type=str,
+        default='/gfs/model_data',
         help="directory where the dataset should be downloaded"
+    )
+    parser.add_argument(
+        '--semaphore-file', metavar='FILE', type=str,
+        default='/gfs/.__success__',
+        help="zero size semaphore file written when all went well"
     )
     parser.add_argument(
         '--requested-resolution', metavar='RESOLUTION',
