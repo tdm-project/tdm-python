@@ -62,6 +62,8 @@ def main(argv):
     os.mkdir(args.target_directory)
     nf.fetch(args.requested_resolution, args.target_directory,
              nthreads=args.n_download_threads)
+    with open(os.path.join(args.target_directory, ".__success__"), "w") as f:
+        f.close()
 
 
 main(sys.argv)
