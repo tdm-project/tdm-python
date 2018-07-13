@@ -162,7 +162,7 @@ DEFAULTS = {
                 'io_form_boundary': 2,
             },
             'history': {
-                'outname': "/WPSRUN/wrfout_d<domain>_<date>.nc",
+                'outname': "/run/wrfout_d<domain>_<date>.nc",
                 'io_form': 2,
             },
             'feedback': 0,
