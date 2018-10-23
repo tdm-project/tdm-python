@@ -1,5 +1,7 @@
 language: python
 
+python: "3.6"
+
 cache: pip
 
 sudo: required
@@ -11,8 +13,7 @@ before_install: pip install flake8
 # handled in the Docker image
 install: true
 
-before_script:
-  # - flake8 -v .
+before_script: flake8 -v .
 
 script:
  - docker build -t crs4/tdm-tools .

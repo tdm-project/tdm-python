@@ -98,18 +98,18 @@ class test_configurator(unittest.TestCase):
 
     def check_generation(self):
         c = self.c
-        share = c.generate_share()
-        geogrid = c.generate_geogrid()
-        ungrib = c.generate_ungrib()
-        metgrid = c.generate_metgrid()
-        time_control = c.generate_time_control()
-        domains = c.generate_domains()
-        physics = c.generate_physics()
-        fdda = c.generate_fdda()
-        dynamics = c.generate_dynamics()
-        bdy_control = c.generate_bdy_control()
-        grib2 = c.generate_grib2()
-        namelist_quilt = c.generate_namelist_quilt()
+        c.generate_share()
+        c.generate_geogrid()
+        c.generate_ungrib()
+        c.generate_metgrid()
+        c.generate_time_control()
+        c.generate_domains()
+        c.generate_physics()
+        c.generate_fdda()
+        c.generate_dynamics()
+        c.generate_bdy_control()
+        c.generate_grib2()
+        c.generate_namelist_quilt()
 
     def check_domains(self):
         c = self.c

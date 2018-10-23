@@ -170,7 +170,7 @@ DEFAULTS = {
             'parallel': {
                 'nio_tasks_per_group': 0,
                 'nio_groups': 1,
-                'numtiles': 1,                
+                'numtiles': 1,
             },
         },
         'geogrid': {

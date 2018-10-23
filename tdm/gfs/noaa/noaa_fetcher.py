@@ -60,6 +60,7 @@ class noaa_fetcher(object):
         LOGGER.info('It took %s secs to fetch %s',
                     dt.total_seconds(), fname)
         return target
+
     def fetch(self, res, tdir, pattern='gfs.t%Hz.pgrb2',
               nthreads=4, tsleep=300):
         def recover_results(fut_by_name):
