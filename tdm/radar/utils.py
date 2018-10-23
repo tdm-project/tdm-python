@@ -1,8 +1,10 @@
-import gdal
 import glob
 from datetime import datetime, timedelta
 import itertools as it
 import numpy as np
+
+import gdal
+from gdal import osr
 
 
 def get_grid(fname, unit='km', send_raster=False):
@@ -72,8 +74,7 @@ def estimate_rainfall(signal, mask):
     return (Z/300)**(1/1.5) * mask
 
 
-
-# From https://gis.stackexchange.com/questions/139906/replicating-result-of-gdalwarp-using-gdal-python-bindings
+# https://gis.stackexchange.com/questions/139906
 def get_wkt(srs_code):
     # checks? we need no stinking checks!
     geo, code = srs_code.split(':')
@@ -86,7 +87,6 @@ def get_wkt(srs_code):
 def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=None):
     src_ds = gdal.Open(in_path)
     dst_wkt = get_wkt(t_srs)
-    dst_srs = osr.SpatialReference()
     src_wkt = None if s_srs is None else get_wkt(s_srs)
     error_threshold = error_threshold if error_threshold is not None else 0.125
     resampling = gdal.GRA_NearestNeighbour
@@ -98,5 +98,4 @@ def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=None):
                                       resampling,
                                       error_threshold)
     # Create the final warped raster
-    dst_ds = gdal.GetDriverByName('GTiff').CreateCopy(out_path, tmp_ds)
-
+    gdal.GetDriverByName('GTiff').CreateCopy(out_path, tmp_ds)
