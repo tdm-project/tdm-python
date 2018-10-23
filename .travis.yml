@@ -1,0 +1,19 @@
+language: python
+
+cache: pip
+
+sudo: required
+
+services: docker
+
+before_install: pip install flake8
+
+# handled in the Docker image
+install: true
+
+before_script:
+  # - flake8 -v .
+
+script:
+ - docker build -t crs4/tdm-tools .
+ - docker run --rm crs4/tdm-tools bash -c "cd test/tdm/wrf && python test_configurator.py"
