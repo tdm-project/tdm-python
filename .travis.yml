@@ -17,4 +17,4 @@ before_script: flake8 -v .
 
 script:
  - docker build -t crs4/tdm-tools .
- - docker run --rm crs4/tdm-tools bash -c "cd test/wrf && python test_configurator.py"
+ - docker run --rm crs4/tdm-tools bash -c "test/run"

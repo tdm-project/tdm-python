@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+this="${BASH_SOURCE-$0}"
+this_dir=$(cd -P -- "$(dirname -- "${this}")" && pwd -P)
+
+dirs=(
+    "gfs"
+    "radar"
+    "wrf"
+)
+
+for d in ${dirs[@]}; do
+    pushd "${this_dir}/${d}"
+    ./run
+    popd
+done
