@@ -1,4 +1,7 @@
+import gdal
 from gdal import ogr, osr
+
+gdal.UseExceptions()
 
 
 def project(transform, p):
