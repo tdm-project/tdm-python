@@ -13,6 +13,8 @@ def get_grid(fname, unit='km', send_raster=False):
     "extract grid information from a geo image"
     raster = gdal.Open(fname)
     gt = raster.GetGeoTransform()
+    # FIXME We only deal with rectangular, axis aligned images
+    assert gt[2] == 0.0 and gt[4] == 0.0
     oX, oY, pxlW, pxlH = gt[0], gt[3], gt[1], gt[5]
     cols, rows = raster.RasterXSize, raster.RasterYSize
     factor = {'km': 0.001, 'm': 1.0}[unit]
