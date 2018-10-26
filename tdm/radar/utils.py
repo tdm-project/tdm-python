@@ -6,6 +6,8 @@ import numpy as np
 import gdal
 from gdal import osr
 
+gdal.UseExceptions()
+
 
 def get_grid(fname, unit='km', send_raster=False):
     "extract grid information from a geo image"
