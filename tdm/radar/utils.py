@@ -1,6 +1,7 @@
 import glob
 from datetime import datetime, timedelta
 import itertools as it
+import os
 import numpy as np
 
 import gdal
@@ -55,8 +56,10 @@ def get_raw_radar_images(root, after, before):
     rgx_t = '[0-5][0-9]:[0-5][0-9]:[0-5][0-9]'
     ext = '.png'
     rgx = rgx_d + '_' + rgx_t + ext
-    v = ((datetime.strptime(_[len(root):-len(ext)], '%Y-%m-%d_%H:%M:%S'), _)
-         for _ in sorted(glob.glob(root + rgx)))
+    strptime = datetime.strptime
+    basename, splitext = os.path.basename, os.path.splitext
+    v = ((strptime(splitext(basename(_))[0], '%Y-%m-%d_%H:%M:%S'), _)
+         for _ in sorted(glob.glob(os.path.join(root, rgx))))
     return filter(lambda _: after < _[0] < before, v)
 
 
