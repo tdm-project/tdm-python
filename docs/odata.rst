@@ -1,28 +1,24 @@
-Batch download
-=============
+Batch Download
+==============
 
-Batch download is supported as CKAN registered datafile in known data formats
-(e.g., netcdf4 (CF 1.7 conventions)).
+Batch download is supported as `CKAN <https://ckan.org>`_ registered
+data files in known data formats, e.g., `NetCDF4, CF 1.7 conventions
+<http://cfconventions.org/Data/cf-conventions/cf-conventions-1.7/cf-conventions.html>`_.
 
 Random Access
 =============
 
-.. code-block::
-   /tdm/odata/product/meteo/<simtype>/<simuid>/description.json
-   /tdm/odata/product/meteo/<simtype>/<simuid>/<timestamp>/<georect>/<field>
+Weather simulations::
 
-Description contains an API id
+    /tdm/odata/product/meteo/<simtype>/<simuid>/description.json
+    /tdm/odata/product/meteo/<simtype>/<simuid>/<timestamp>/<georect>/<field>
 
-where `field` is the specific field, e.g., pressure 
+Where ``field`` is a specific attribute (such as "pressure") and
+``description.json`` contains an API version number.
 
+Radar data::
 
-.. code-block::
-   /tdm/odata/product/radar/<radarid>/<acquid>/<processingid>/description.json
-   /tdm/odata/product/radar/<radarid>/<acquid>/<processingid>/<timestamp>/<georect>/<field>
+    /tdm/odata/product/radar/<radarid>/<acquid>/<processingid>/description.json
+    /tdm/odata/product/radar/<radarid>/<acquid>/<processingid>/<timestamp>/<georect>/<field>
 
-
-where field is, e.g.,  'rainfall_rate'.
-
-   
-
-
+Where ``field`` is, e.g., "rainfall_rate".
