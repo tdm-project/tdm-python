@@ -1,0 +1,197 @@
+#!/usr/bin/env python
+
+from collections import Counter
+from netCDF4 import Dataset
+import argparse
+import datetime
+import imageio
+import os
+import sys
+
+import numpy as np
+from tdm.radar import utils
+
+strptime = datetime.datetime.strptime
+splitext = os.path.splitext
+
+FMT = "%Y-%m-%d_%H:%M:%S"
+MIN_EVENT_LEN = 24 * 60 * 60
+
+GLOBAL_ATTRIBUTES = {
+    "Conventions": "CF-1.7",
+    "title": "Rainfall",
+    "institution": "TDM",
+    "source": "Radar",
+    "references": "http://www.tdm-project.it",
+    "history": "Estimated with https://github.com/tdm-project/tdm-tools"
+}
+
+
+def get_dts(img_dir):
+    ls = []
+    for bn in os.listdir(img_dir):
+        dt_string = splitext(bn)[0]
+        try:
+            dt = strptime(dt_string, FMT)
+        except ValueError:
+            continue
+        ls.append((dt, bn))
+    ls.sort()
+    return tuple(zip(*ls))
+
+
+def get_event_threshold(deltas):
+    freq = Counter(deltas)
+    weights = [freq[_] for _ in deltas]
+    mu = np.average(deltas, weights=weights)
+    sigma = np.sqrt(np.average((deltas - mu)**2, weights=weights))
+    return mu + 3 * sigma
+
+
+def events(dts, names, min_len=MIN_EVENT_LEN):
+    if not isinstance(min_len, datetime.timedelta):
+        min_len = datetime.timedelta(seconds=min_len)
+    deltas = np.array([(dts[i+1] - dts[i]).total_seconds()
+                       for i in range(len(dts) - 1)])
+    threshold = get_event_threshold(deltas)
+    big_delta_idx = np.argwhere(deltas > threshold)[:, 0]
+    dts_idx = np.insert(1 + big_delta_idx, 0, 0)
+    for i in range(dts_idx.size - 1):
+        b, e = dts_idx[i], dts_idx[i+1]
+        if dts[e - 1] - dts[b] < min_len:
+            continue
+        yield dts[b: e], names[b: e]
+
+
+def get_image_data(path):
+    im = imageio.imread(path)
+    return im[:, :, 0], im[:, :, 3] == 255  # signal, mask
+
+
+def setncattr(dataset, attrs):
+    for k, v in attrs.items():
+        dataset.setncattr(k, v)
+
+
+# CF conventions, sections 4.4 & 5.1
+# See also: https://code.mpimet.mpg.de/boards/1/topics/5765
+def create_variables(dataset, cols, rows):
+    timed = dataset.createDimension("time", None)
+    xd = dataset.createDimension("x", cols)
+    yd = dataset.createDimension("y", rows)
+    t = dataset.createVariable("time", "f4", (timed.name,))
+    setncattr(t, {
+        "long_name": "time",
+        "standard_name": "time",
+        "units": "POSIX UTC timestamp"
+    })
+    x = dataset.createVariable("x", "f4", (xd.name,))
+    setncattr(x, {
+        "long_name": "x coordinate of projection",
+        "standard_name": "projection_x_coordinate",
+        "units": "km"
+    })
+    y = dataset.createVariable("y", "f4", (yd.name,))
+    setncattr(y, {
+        "long_name": "y coordinate of projection",
+        "standard_name": "projection_y_coordinate",
+        "units": "km"
+    })
+    lat = dataset.createVariable("lat", "f4", (xd.name, yd.name))
+    setncattr(lat, {
+        "long_name": "latitude coordinate",
+        "standard_name": "latitude",
+        "units": "degrees_north"
+    })
+    lon = dataset.createVariable("lon", "f4", (xd.name, yd.name))
+    setncattr(lat, {
+        "long_name": "longitude coordinate",
+        "standard_name": "longitude",
+        "units": "degrees_east"
+    })
+    rf_rate = dataset.createVariable('rainfall_rate', 'f4',
+                                     (timed.name, xd.name, yd.name),
+                                     fill_value=1.0e+20)
+    setncattr(rf_rate, {
+        'long_name': 'estimated rainfall rate',
+        'standard_name': 'rainfall_rate',
+        'coordinates': 'lat lon',
+        'grid_mapping': 'crs',
+        'units': 'mm/hour'
+    })
+    return t, x, y, lat, lon, rf_rate
+
+
+# CF conventions, section 5.6.1. TODO: derive attributes from the wkt
+def attach_crs(dataset, wkt):
+    crs = dataset.createVariable('crs', 'i4')  # dummy scalar (anchor)
+    setncattr(crs, {
+        'grid_mapping_name': 'transverse_mercator',
+        'longitude_of_central_meridian': 9.0,
+        'latitude_of_projection_origin': 0.0,
+        'false_easting': 1500000.0,
+        'false_northing': 0.0,
+        'scale_factor_at_central_meridian': 0.9996,
+        'semi_major_axis': 6378388.0,
+        'inverse_flattening': 297,
+        'projected_coordinate_system_name':
+            'EPSG:3003 Monte Mario / Italy zone 1',
+        'geographic_coordinate_system_name': 'Monte Mario',
+        'horizontal_datum_name':  'Monte_Mario',
+        'reference_ellipsoid_name': 'International 1924',
+        'prime_meridian_name': "Greenwich",
+        'towgs84': [-104.1, -49.1, -9.9, 0.971, -2.917, 0.714, -11.68],
+        'crs_wkt': wkt
+    })
+
+
+def main(args):
+    try:
+        os.makedirs(args.out_dir)
+    except FileExistsError:
+        pass
+    oX, oY, pxlW, pxlH, cols, rows, raster = utils.get_grid(
+        args.footprint, unit="km", send_raster=True
+    )
+    wkt = raster.GetProjectionRef()
+    xpos = oX + pxlW * np.arange(0, cols)
+    ypos = oY + pxlH * np.arange(0, rows)
+    utc = datetime.timezone.utc
+    dts, names = get_dts(args.img_dir)
+    for dts_chunk, names_chunk in events(dts, names, min_len=args.min_len):
+        start = datetime.datetime.strftime(dts_chunk[0], FMT)
+        stop = datetime.datetime.strftime(dts_chunk[-1], FMT)
+        path = os.path.join(args.out_dir, "%s.nc" % start)
+        print("saving %s (data until %s)" % (path, stop))
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+        ds = Dataset(path, "w")
+        setncattr(ds, GLOBAL_ATTRIBUTES)
+        t, x, y, lat, lon, rf_rate = create_variables(ds, cols, rows)
+        attach_crs(ds, wkt)
+        # https://stackoverflow.com/questions/8777753, but are our dts UTC?
+        t[:] = [_.replace(tzinfo=utc).timestamp() for _ in dts_chunk]
+        x[:] = xpos
+        y[:] = ypos
+        fill_value = rf_rate._FillValue
+        print("  0/%d" % len(names_chunk))
+        for i, name in enumerate(names_chunk):
+            if ((i + 1) % 100 == 0):
+                print("  %d/%d" % (i + 1, len(names_chunk)))
+            signal, mask = get_image_data(os.path.join(args.img_dir, name))
+            rainfall = utils.estimate_rainfall(signal, mask)
+            rainfall[mask == 0] = fill_value
+            rf_rate[len(t), :, :] = rainfall
+        ds.close()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("img_dir", metavar="PNG_IMG_DIR")
+    parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
+    parser.add_argument("-l", "--min-len", metavar="SECONDS", type=int,
+                        default=MIN_EVENT_LEN, help="minimum event length")
+    parser.add_argument("-o", "--out-dir", metavar="DIR")
+    main(parser.parse_args(sys.argv[1:]))
