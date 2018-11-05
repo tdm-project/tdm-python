@@ -57,6 +57,9 @@ class TestGetImages(unittest.TestCase):
         ls = list(utils.get_raw_radar_images(self.wd, after, before))
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
+        ls = list(utils.get_raw_radar_images(self.wd))
+        self.assertEqual(len(ls), len(exp_res))
+        self.assertEqual(ls, exp_res)
 
     def test_get_grouped(self):
         delta = timedelta(minutes=5)
@@ -80,6 +83,11 @@ class TestGetImages(unittest.TestCase):
         }
         res = {dt: list(g) for dt, g in utils.get_grouped_raw_radar_images(
             self.wd, delta, datetime.min, datetime.max
+        )}
+        self.assertEqual(len(res), len(exp_res))
+        self.assertEqual(res, exp_res)
+        res = {dt: list(g) for dt, g in utils.get_grouped_raw_radar_images(
+            self.wd, delta
         )}
         self.assertEqual(len(res), len(exp_res))
         self.assertEqual(res, exp_res)

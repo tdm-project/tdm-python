@@ -10,6 +10,9 @@ from gdal import osr
 gdal.UseExceptions()
 
 
+MIN_DT, MAX_DT = datetime.min, datetime.max
+
+
 def get_grid(fname, unit='km', send_raster=False):
     "extract grid information from a geo image"
     raster = gdal.Open(fname)
@@ -53,7 +56,7 @@ class GeoAdapter(object):
         band.FlushCache()
 
 
-def get_raw_radar_images(root, after, before):
+def get_raw_radar_images(root, after=MIN_DT, before=MAX_DT):
     rgx_d = '[0-9]' * 4 + '-' + '[0-1][0-9]' + '-' + '[0-3][0-9]'
     rgx_t = '[0-5][0-9]:[0-5][0-9]:[0-5][0-9]'
     ext = '.png'
@@ -65,13 +68,12 @@ def get_raw_radar_images(root, after, before):
     return filter(lambda _: after < _[0] < before, v)
 
 
-def get_grouped_raw_radar_images(root, delta, after=None, before=None):
+def get_grouped_raw_radar_images(root, delta, after=MIN_DT, before=MAX_DT):
     assert isinstance(delta, timedelta)
-    after = after if after is not None else datetime(1000, 0, 0, 0, 0, 0)
-    before = before if before is not None else datetime(3000, 0, 0, 0, 0, 0)
 
     def grouper(p):
         return after + delta * ((p[0] - after) // delta)
+
     return it.groupby(get_raw_radar_images(root, after, before), grouper)
 
 
