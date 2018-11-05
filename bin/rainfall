@@ -83,7 +83,7 @@ def create_variables(dataset, cols, rows):
     setncattr(t, {
         "long_name": "time",
         "standard_name": "time",
-        "units": "POSIX UTC timestamp"
+        "units": "seconds since 1970-1-1 0:0:0"
     })
     x = dataset.createVariable("x", "f4", (xd.name,))
     setncattr(x, {
