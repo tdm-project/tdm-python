@@ -1,4 +1,3 @@
-import glob
 from datetime import datetime, timedelta
 import itertools as it
 import os
@@ -9,7 +8,10 @@ from gdal import osr
 
 gdal.UseExceptions()
 
+strptime = datetime.strptime
+splitext = os.path.splitext
 
+FMT = "%Y-%m-%d_%H:%M:%S"
 MIN_DT, MAX_DT = datetime.min, datetime.max
 
 
@@ -57,15 +59,18 @@ class GeoAdapter(object):
 
 
 def get_raw_radar_images(root, after=MIN_DT, before=MAX_DT):
-    rgx_d = '[0-9]' * 4 + '-' + '[0-1][0-9]' + '-' + '[0-3][0-9]'
-    rgx_t = '[0-5][0-9]:[0-5][0-9]:[0-5][0-9]'
-    ext = '.png'
-    rgx = rgx_d + '_' + rgx_t + ext
-    strptime = datetime.strptime
-    basename, splitext = os.path.basename, os.path.splitext
-    v = ((strptime(splitext(basename(_))[0], '%Y-%m-%d_%H:%M:%S'), _)
-         for _ in sorted(glob.glob(os.path.join(root, rgx))))
-    return filter(lambda _: after < _[0] < before, v)
+    ls = []
+    for bn in os.listdir(root):
+        dt_string = splitext(bn)[0]
+        try:
+            dt = strptime(dt_string, FMT)
+        except ValueError:
+            continue
+        if dt < after or dt > before:
+            continue
+        ls.append((dt, os.path.join(root, bn)))
+    ls.sort()
+    return ls
 
 
 def get_grouped_raw_radar_images(root, delta, after=MIN_DT, before=MAX_DT):

@@ -47,17 +47,17 @@ class TestGetImages(unittest.TestCase):
 
     def test_get(self):
         exp_res = self.info[2:-1]
-        ls = list(utils.get_raw_radar_images(self.wd, self.AFTER, self.BEFORE))
+        ls = utils.get_raw_radar_images(self.wd, self.AFTER, self.BEFORE)
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
 
     def test_get_all(self):
         after, before = datetime.min, datetime.max
         exp_res = self.info
-        ls = list(utils.get_raw_radar_images(self.wd, after, before))
+        ls = utils.get_raw_radar_images(self.wd, after, before)
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
-        ls = list(utils.get_raw_radar_images(self.wd))
+        ls = utils.get_raw_radar_images(self.wd)
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
 
