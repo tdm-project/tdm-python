@@ -39,6 +39,8 @@ class TestGetImages(unittest.TestCase):
             with io.open(p, "wb"):
                 pass
             self.info.append((datetime.strptime(name, self.FMT), p))  # sorted
+        with io.open(os.path.join(self.wd, "README.txt"), "wb"):
+            pass
 
     def tearDown(self):
         shutil.rmtree(self.wd)
@@ -46,6 +48,13 @@ class TestGetImages(unittest.TestCase):
     def test_get(self):
         exp_res = self.info[2:-1]
         ls = list(utils.get_raw_radar_images(self.wd, self.AFTER, self.BEFORE))
+        self.assertEqual(len(ls), len(exp_res))
+        self.assertEqual(ls, exp_res)
+
+    def test_get_all(self):
+        after, before = datetime.min, datetime.max
+        exp_res = self.info
+        ls = list(utils.get_raw_radar_images(self.wd, after, before))
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
 
@@ -57,6 +66,20 @@ class TestGetImages(unittest.TestCase):
         }
         res = {dt: list(g) for dt, g in utils.get_grouped_raw_radar_images(
             self.wd, delta, self.AFTER, self.BEFORE
+        )}
+        self.assertEqual(len(res), len(exp_res))
+        self.assertEqual(res, exp_res)
+
+    def test_get_all_grouped(self):
+        delta = timedelta(minutes=5)
+        exp_res = {
+            datetime(2018, 5, 1, 23, 15): self.info[:2],
+            datetime(2018, 5, 1, 23, 20): self.info[2:7],
+            datetime(2018, 5, 1, 23, 25): self.info[7:12],
+            datetime(2018, 5, 1, 23, 30): self.info[12:],
+        }
+        res = {dt: list(g) for dt, g in utils.get_grouped_raw_radar_images(
+            self.wd, delta, datetime.min, datetime.max
         )}
         self.assertEqual(len(res), len(exp_res))
         self.assertEqual(res, exp_res)
