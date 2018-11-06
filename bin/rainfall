@@ -15,11 +15,6 @@ import sys
 import numpy as np
 from tdm.radar import utils
 
-strptime = datetime.datetime.strptime
-splitext = os.path.splitext
-
-FMT = "%Y-%m-%d_%H:%M:%S"
-MIN_EVENT_LEN = 24 * 60 * 60
 
 GLOBAL_ATTRIBUTES = {
     "Conventions": "CF-1.7",
@@ -29,19 +24,6 @@ GLOBAL_ATTRIBUTES = {
     "references": "http://www.tdm-project.it",
     "history": "Estimated with https://github.com/tdm-project/tdm-tools"
 }
-
-
-def get_dts(img_dir):
-    ls = []
-    for bn in os.listdir(img_dir):
-        dt_string = splitext(bn)[0]
-        try:
-            dt = strptime(dt_string, FMT)
-        except ValueError:
-            continue
-        ls.append((dt, bn))
-    ls.sort()
-    return tuple(zip(*ls))
 
 
 def get_image_data(path):
@@ -56,8 +38,8 @@ def setncattr(dataset, attrs):
 
 # CF conventions, sections 4.4 & 5.1
 # See also: https://code.mpimet.mpg.de/boards/1/topics/5765
-def create_variables(dataset, cols, rows):
-    timed = dataset.createDimension("time", None)
+def create_variables(dataset, cols, rows, timepoints):
+    timed = dataset.createDimension("time", timepoints)
     xd = dataset.createDimension("x", cols)
     yd = dataset.createDimension("y", rows)
     t = dataset.createVariable("time", "f4", (timed.name,))
@@ -138,20 +120,21 @@ def main(args):
     xpos = oX + pxlW * np.arange(0, cols)
     ypos = oY + pxlH * np.arange(0, rows)
     utc = datetime.timezone.utc
-    dts, names = get_dts(args.img_dir)
+    dts, names = zip(*utils.get_raw_radar_images(args.img_dir))
     for dts_chunk, names_chunk in utils.events(dts, names,
                                                min_len=args.min_len):
-        start = datetime.datetime.strftime(dts_chunk[0], FMT)
-        stop = datetime.datetime.strftime(dts_chunk[-1], FMT)
+        start = datetime.datetime.strftime(dts_chunk[0], utils.FMT)
+        stop = datetime.datetime.strftime(dts_chunk[-1], utils.FMT)
         path = os.path.join(args.out_dir, "%s.nc" % start)
-        print("saving %s (data until %s)" % (path, stop))
+        nt = len(dts_chunk)
+        print("saving %s (%d timepoints, until %s)" % (path, nt, stop))
         try:
             os.unlink(path)
         except FileNotFoundError:
             pass
         ds = Dataset(path, "w")
         setncattr(ds, GLOBAL_ATTRIBUTES)
-        t, x, y, lat, lon, rf_rate = create_variables(ds, cols, rows)
+        t, x, y, lat, lon, rf_rate = create_variables(ds, cols, rows, nt)
         attach_crs(ds, wkt)
         # https://stackoverflow.com/questions/8777753, but are our dts UTC?
         t[:] = [_.replace(tzinfo=utc).timestamp() for _ in dts_chunk]
@@ -165,7 +148,7 @@ def main(args):
             signal, mask = get_image_data(os.path.join(args.img_dir, name))
             rainfall = utils.estimate_rainfall(signal, mask)
             rainfall[mask == 0] = fill_value
-            rf_rate[len(t), :, :] = rainfall
+            rf_rate[i, :, :] = rainfall
         ds.close()
 
 
