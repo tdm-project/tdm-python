@@ -14,6 +14,15 @@ splitext = os.path.splitext
 FMT = "%Y-%m-%d_%H:%M:%S"
 MIN_DT, MAX_DT = datetime.min, datetime.max
 
+# The radar is supposed to generate an image every minute. In practice, while
+# the peak is at 60s, deltas can go below 50 and above 70 (data from >120K
+# images). 200s seems a good threshold for separating between events (i.e., a
+# delta larger than that means the radar has been turned off and on again).
+EVENT_THRESHOLD = 200
+
+# Ignore events that last less than this, in seconds
+MIN_EVENT_LEN = 24 * 60 * 60
+
 
 def get_grid(fname, unit='km', send_raster=False):
     "extract grid information from a geo image"
@@ -113,3 +122,19 @@ def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=None):
                                       error_threshold)
     # Create the final warped raster
     gdal.GetDriverByName('GTiff').CreateCopy(out_path, tmp_ds)
+
+
+def events(dts, names, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
+    assert len(dts) == len(names)
+    if not isinstance(min_len, timedelta):
+        min_len = timedelta(seconds=min_len)
+    deltas = np.array([(dts[i+1] - dts[i]).total_seconds()
+                       for i in range(len(dts) - 1)])
+    big_delta_idx = np.argwhere(deltas > threshold)[:, 0]
+    dts_idx = np.insert(1 + big_delta_idx, 0, 0)
+    dts_idx = np.append(dts_idx, len(dts))
+    for i in range(dts_idx.size - 1):
+        b, e = dts_idx[i], dts_idx[i+1]
+        if dts[e - 1] - dts[b] < min_len:
+            continue
+        yield dts[b: e], names[b: e]

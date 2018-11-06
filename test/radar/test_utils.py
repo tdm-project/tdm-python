@@ -4,7 +4,68 @@ import os
 import shutil
 import tempfile
 import unittest
+
+import numpy as np
 import tdm.radar.utils as utils
+
+
+class TestEvents(unittest.TestCase):
+
+    def test_multi(self):
+        N = 100000
+        mu, sigma = 60, 5
+        deltas = np.random.normal(mu, sigma, N - 1)
+        event_idx = [1000, 10000, 50000]
+        secs_between = 60 * 60
+        deltas[event_idx] = secs_between
+        start = datetime(2018, 1, 1, 0, 0, 0)
+        dts = [start]
+        for d in deltas:
+            dts.append(dts[-1] + timedelta(seconds=d))
+        names = [datetime.strftime(_, utils.FMT) for _ in dts]
+
+        events = list(utils.events(dts, names, min_len=100))
+        self.assertEqual(len(events), 4)
+        dt_chunks, name_chunks = zip(*events)
+        exp_lengths = [1001, 10001 - 1001, 50001 - 10001, 100000 - 50001]
+        for seq in dt_chunks, name_chunks:
+            self.assertEqual([len(_) for _ in seq], exp_lengths)
+        self.assertEqual(dt_chunks[0], dts[:1001])
+        self.assertEqual(dt_chunks[1], dts[1001:10001])
+        self.assertEqual(dt_chunks[2], dts[10001:50001])
+        self.assertEqual(dt_chunks[3], dts[50001:])
+        self.assertEqual(name_chunks[0], names[:1001])
+        self.assertEqual(name_chunks[1], names[1001:10001])
+        self.assertEqual(name_chunks[2], names[10001:50001])
+        self.assertEqual(name_chunks[3], names[50001:])
+
+        events = list(utils.events(dts, names, min_len=timedelta(days=1)))
+        self.assertEqual(len(events), 3)
+        dt_chunks, name_chunks = zip(*events)
+        exp_lengths = [10001 - 1001, 50001 - 10001, 100000 - 50001]
+        for seq in dt_chunks, name_chunks:
+            self.assertEqual([len(_) for _ in seq], exp_lengths)
+        self.assertEqual(dt_chunks[0], dts[1001:10001])
+        self.assertEqual(dt_chunks[1], dts[10001:50001])
+        self.assertEqual(dt_chunks[2], dts[50001:])
+        self.assertEqual(name_chunks[0], names[1001:10001])
+        self.assertEqual(name_chunks[1], names[10001:50001])
+        self.assertEqual(name_chunks[2], names[50001:])
+
+    def test_single(self):
+        N = 1000
+        mu, sigma = 60, 5
+        deltas = np.random.normal(mu, sigma, N - 1)
+        start = datetime(2018, 1, 1, 0, 0, 0)
+        dts = [start]
+        for d in deltas:
+            dts.append(dts[-1] + timedelta(seconds=d))
+        names = [datetime.strftime(_, utils.FMT) for _ in dts]
+        events = list(utils.events(dts, names, min_len=100))
+        self.assertEqual(len(events), 1)
+        dt_chunk, name_chunk = events[0]
+        self.assertEqual(dt_chunk, dts)
+        self.assertEqual(name_chunk, names)
 
 
 class TestGetImages(unittest.TestCase):
@@ -94,6 +155,7 @@ class TestGetImages(unittest.TestCase):
 
 
 CASES = [
+    TestEvents,
     TestGetImages,
 ]
 
