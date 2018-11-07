@@ -29,6 +29,16 @@ def check_time_unit(t):
     return strptime(parts[2], fmt)
 
 
+def check_geo(dataset, footprint):
+    oX, oY, pxlW, pxlH, cols, rows = utils.get_grid(footprint, unit="km")
+    xpos = oX + pxlW * np.arange(0, cols)
+    ypos = oY + pxlH * np.arange(0, rows)
+    x, y = dataset.variables["x"], dataset.variables["y"]
+    assert (x.size, y.size) == (cols, rows)
+    assert np.allclose(x[:].data, xpos)
+    assert np.allclose(y[:].data, ypos)
+
+
 def check_time(dataset, dts):
     t = dataset.variables["time"]
     assert t.size == len(dts)
@@ -47,9 +57,10 @@ def check_rainfall_rate(dataset, dts, img_dir):
         assert np.ma.allclose(rr[i], rainfall)
 
 
-def check(nc_path, img_dir):
+def check(nc_path, img_dir, footprint):
     dts, paths = zip(*utils.get_raw_radar_images(img_dir))
     ds = Dataset(nc_path, "r")
+    check_geo(ds, footprint)
     check_time(ds, dts)
     check_rainfall_rate(ds, dts, img_dir)
 
@@ -60,12 +71,12 @@ def main(args):
     print("checking:")
     for p in nc_paths:
         print(" ", p)
-        check(p, args.img_dir)
+        check(p, args.img_dir, args.footprint)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("nc_dir", metavar="NETCDF_DIR")
     parser.add_argument("img_dir", metavar="PNG_IMG_DIR")
-    # parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
+    parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
     main(parser.parse_args(sys.argv[1:]))
