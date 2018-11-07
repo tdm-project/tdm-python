@@ -76,9 +76,10 @@ def create_variables(dataset, cols, rows, dts):
         "standard_name": "longitude",
         "units": "degrees_east"
     })
-    rf_rate = dataset.createVariable('rainfall_rate', 'f4',
-                                     (timed.name, xd.name, yd.name),
-                                     fill_value=1.0e+20)
+    rf_rate = dataset.createVariable(
+        "rainfall_rate", "f4", (timed.name, xd.name, yd.name),
+        fill_value=1.0e+20, zlib=True, least_significant_digit=4
+    )
     setncattr(rf_rate, {
         'long_name': 'estimated rainfall rate',
         'standard_name': 'rainfall_rate',
