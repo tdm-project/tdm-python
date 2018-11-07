@@ -2,7 +2,8 @@
 
 """\
 Estimate rainfall from radar output images and store results into NetCDF4
-datasets, one per \"event\".
+datasets, using the NetCDF Climate and Forecast (CF) Metadata Conventions
+(http://cfconventions.org) Version 1.7.
 """
 
 from netCDF4 import Dataset
@@ -15,6 +16,7 @@ import sys
 import numpy as np
 from tdm.radar import utils
 
+strftime = datetime.datetime.strftime
 
 GLOBAL_ATTRIBUTES = {
     "Conventions": "CF-1.7",
@@ -24,6 +26,8 @@ GLOBAL_ATTRIBUTES = {
     "references": "http://www.tdm-project.it",
     "history": "Estimated with https://github.com/tdm-project/tdm-tools"
 }
+
+TIME_UNIT_FMT = "%Y-%m-%d %H:%M:%S"
 
 
 def get_image_data(path):
@@ -38,15 +42,15 @@ def setncattr(dataset, attrs):
 
 # CF conventions, sections 4.4 & 5.1
 # See also: https://code.mpimet.mpg.de/boards/1/topics/5765
-def create_variables(dataset, cols, rows, timepoints):
-    timed = dataset.createDimension("time", timepoints)
+def create_variables(dataset, cols, rows, dts):
+    timed = dataset.createDimension("time", len(dts))
     xd = dataset.createDimension("x", cols)
     yd = dataset.createDimension("y", rows)
     t = dataset.createVariable("time", "f4", (timed.name,))
     setncattr(t, {
         "long_name": "time",
         "standard_name": "time",
-        "units": "seconds since 1970-1-1 0:0:0"
+        "units": "seconds since %s" % strftime(dts[0], TIME_UNIT_FMT)
     })
     x = dataset.createVariable("x", "f4", (xd.name,))
     setncattr(x, {
@@ -119,12 +123,11 @@ def main(args):
     wkt = raster.GetProjectionRef()
     xpos = oX + pxlW * np.arange(0, cols)
     ypos = oY + pxlH * np.arange(0, rows)
-    utc = datetime.timezone.utc
     dts, names = zip(*utils.get_raw_radar_images(args.img_dir))
     for dts_chunk, names_chunk in utils.events(dts, names,
                                                min_len=args.min_len):
-        start = datetime.datetime.strftime(dts_chunk[0], utils.FMT)
-        stop = datetime.datetime.strftime(dts_chunk[-1], utils.FMT)
+        start = strftime(dts_chunk[0], utils.FMT)
+        stop = strftime(dts_chunk[-1], utils.FMT)
         path = os.path.join(args.out_dir, "%s.nc" % start)
         nt = len(dts_chunk)
         print("saving %s (%d timepoints, until %s)" % (path, nt, stop))
@@ -134,10 +137,11 @@ def main(args):
             pass
         ds = Dataset(path, "w")
         setncattr(ds, GLOBAL_ATTRIBUTES)
-        t, x, y, lat, lon, rf_rate = create_variables(ds, cols, rows, nt)
+        t, x, y, lat, lon, rf_rate = create_variables(
+            ds, cols, rows, dts_chunk
+        )
         attach_crs(ds, wkt)
-        # https://stackoverflow.com/questions/8777753, but are our dts UTC?
-        t[:] = [_.replace(tzinfo=utc).timestamp() for _ in dts_chunk]
+        t[:] = [(_ - dts_chunk[0]).total_seconds() for _ in dts_chunk]
         x[:] = xpos
         y[:] = ypos
         fill_value = rf_rate._FillValue

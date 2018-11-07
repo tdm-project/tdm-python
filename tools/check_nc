@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+
+from netCDF4 import Dataset
+import argparse
+import datetime
+import imageio
+import os
+import sys
+
+import numpy as np
+
+from tdm.radar import utils
+
+
+strptime = datetime.datetime.strptime
+strftime = datetime.datetime.strftime
+
+
+def get_image_data(path):
+    im = imageio.imread(path)
+    return im[:, :, 0], im[:, :, 3] == 255  # signal, mask
+
+
+def check_time_unit(t):
+    fmt = "%Y-%m-%d %H:%M:%S"
+    parts = t.getncattr("units").strip().split(" ", 2)
+    assert len(parts) == 3
+    assert parts[:2] == ["seconds", "since"]
+    return strptime(parts[2], fmt)
+
+
+def check_time(dataset, dts):
+    t = dataset.variables["time"]
+    assert t.size == len(dts)
+    start = check_time_unit(t)
+    for i, dt in enumerate(dts):
+        item = t[i].data.item()  # FIXME: this does not need to be a masked arr
+        assert dt == start + datetime.timedelta(seconds=item)
+
+
+def check_rainfall_rate(dataset, dts, img_dir):
+    rr = dataset.variables["rainfall_rate"]
+    for i, dt in enumerate(dts):
+        name = "%s.png" % strftime(dt, "%Y-%m-%d_%H:%M:%S")
+        signal, mask = get_image_data(os.path.join(img_dir, name))
+        rainfall = utils.estimate_rainfall(signal, mask)
+        assert np.ma.allclose(rr[i], rainfall)
+
+
+def check(nc_path, img_dir):
+    dts, paths = zip(*utils.get_raw_radar_images(img_dir))
+    ds = Dataset(nc_path, "r")
+    check_time(ds, dts)
+    check_rainfall_rate(ds, dts, img_dir)
+
+
+def main(args):
+    nc_paths = [os.path.join(args.nc_dir, _) for _ in os.listdir(args.nc_dir)]
+    print("found %d files" % len(nc_paths))
+    print("checking:")
+    for p in nc_paths:
+        print(" ", p)
+        check(p, args.img_dir)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("nc_dir", metavar="NETCDF_DIR")
+    parser.add_argument("img_dir", metavar="PNG_IMG_DIR")
+    # parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
+    main(parser.parse_args(sys.argv[1:]))
