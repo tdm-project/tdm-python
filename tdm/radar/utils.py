@@ -24,40 +24,25 @@ EVENT_THRESHOLD = 200
 MIN_EVENT_LEN = 24 * 60 * 60
 
 
-def get_grid(fname, unit='km', send_raster=False):
-    "extract grid information from a geo image"
-    raster = gdal.Open(fname)
-    gt = raster.GetGeoTransform()
-    # FIXME We only deal with rectangular, axis aligned images
-    assert gt[2] == 0.0 and gt[4] == 0.0
-    oX, oY, pxlW, pxlH = gt[0], gt[3], gt[1], gt[5]
-    cols, rows = raster.RasterXSize, raster.RasterYSize
-    factor = {'km': 0.001, 'm': 1.0}[unit]
-    if send_raster:
-        return oX, oY, factor * pxlW, factor * pxlH, cols, rows, raster
-    else:
-        return oX, oY, factor * pxlW, factor * pxlH, cols, rows
-
-
-def compute_distance_field(fname):
-    oX, oY, pxlW, pxlH, cols, rows = get_grid(fname, unit='km')
-    x = pxlW * (np.arange(-(cols/2), (cols/2), 1) + 0.5)
-    y = pxlH * (np.arange(-(rows/2), (rows/2), 1) + 0.5)
-    xx, yy = np.meshgrid(x, y, sparse=True)
-    return 10 * np.log(xx**2 + yy**2)
-
-
 class GeoAdapter(object):
+
     def __init__(self, template):
-        (self.oX,  self.oY, self.pxlW, self.pxlH,
-         self.cols, self.rows, raster) = get_grid(template, unit='m',
-                                                  send_raster=True)
-        self.wkt = raster.GetProjectionRef()
-        self.driver = gdal.GetDriverByName('GTiff')
+        self.raster = gdal.Open(template)
+        oX, pxlW, _1, oY, _2, pxlH = self.raster.GetGeoTransform()
+        # we only deal with rectangular, axis-aligned images
+        if _1 or _2:
+            raise RuntimeError("%s: unsupported transform")
+        self.wkt = self.raster.GetProjectionRef()
+        self.sr = osr.SpatialReference(wkt=self.wkt)
+        factor = self.sr.GetLinearUnits()  # mult factor to get meters
+        self.cols, self.rows = self.raster.RasterXSize, self.raster.RasterYSize
+        self.oX, self.oY = oX, oY
+        self.pxlW, self.pxlH = factor * pxlW, factor * pxlH
 
     def save_as_gtiff(self, fname, data, metadata=None):
-        raster = self.driver.Create(fname, self.cols, self.rows,
-                                    1, gdal.GDT_Float32)
+        raster = gdal.GetDriverByName('GTiff').Create(
+            fname, self.cols, self.rows, 1, gdal.GDT_Float32
+        )
         raster.SetGeoTransform((self.oX, self.pxlW, 0, self.oY, 0, self.pxlH))
         if isinstance(metadata, dict):
             raster.SetMetadata(metadata)
@@ -65,6 +50,18 @@ class GeoAdapter(object):
         band.WriteArray(data)
         raster.SetProjection(self.wkt)
         band.FlushCache()
+
+    def compute_distance_field(self):
+        x = self.pxlW * (np.arange(-(self.cols/2), (self.cols/2), 1) + 0.5)
+        y = self.pxlH * (np.arange(-(self.rows/2), (self.rows/2), 1) + 0.5)
+        xx, yy = np.meshgrid(x, y, sparse=True)
+        return 10 * np.log(xx**2 + yy**2)
+
+    def xpos(self):
+        return self.oX + self.pxlW * np.arange(self.cols)
+
+    def ypos(self):
+        return self.oY + self.pxlH * np.arange(self.rows)
 
 
 def get_raw_radar_images(root, after=MIN_DT, before=MAX_DT):

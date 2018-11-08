@@ -56,13 +56,13 @@ def create_variables(dataset, cols, rows, dts):
     setncattr(x, {
         "long_name": "x coordinate of projection",
         "standard_name": "projection_x_coordinate",
-        "units": "km"
+        "units": "m"
     })
     y = dataset.createVariable("y", "f4", (yd.name,))
     setncattr(y, {
         "long_name": "y coordinate of projection",
         "standard_name": "projection_y_coordinate",
-        "units": "km"
+        "units": "m"
     })
     lat = dataset.createVariable("lat", "f4", (xd.name, yd.name))
     setncattr(lat, {
@@ -118,12 +118,7 @@ def main(args):
         os.makedirs(args.out_dir)
     except FileExistsError:
         pass
-    oX, oY, pxlW, pxlH, cols, rows, raster = utils.get_grid(
-        args.footprint, unit="km", send_raster=True
-    )
-    wkt = raster.GetProjectionRef()
-    xpos = oX + pxlW * np.arange(0, cols)
-    ypos = oY + pxlH * np.arange(0, rows)
+    ga = utils.GeoAdapter(args.footprint)
     dts, names = zip(*utils.get_raw_radar_images(args.img_dir))
     for dts_chunk, names_chunk in utils.events(dts, names,
                                                min_len=args.min_len):
@@ -139,12 +134,12 @@ def main(args):
         ds = Dataset(path, "w")
         setncattr(ds, GLOBAL_ATTRIBUTES)
         t, x, y, lat, lon, rf_rate = create_variables(
-            ds, cols, rows, dts_chunk
+            ds, ga.cols, ga.rows, dts_chunk
         )
-        attach_crs(ds, wkt)
+        attach_crs(ds, ga.wkt)
         t[:] = [(_ - dts_chunk[0]).total_seconds() for _ in dts_chunk]
-        x[:] = xpos
-        y[:] = ypos
+        x[:] = ga.xpos()
+        y[:] = ga.ypos()
         fill_value = rf_rate._FillValue
         print("  0/%d" % len(names_chunk))
         for i, name in enumerate(names_chunk):

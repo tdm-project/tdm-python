@@ -30,13 +30,11 @@ def check_time_unit(t):
 
 
 def check_geo(dataset, footprint):
-    oX, oY, pxlW, pxlH, cols, rows = utils.get_grid(footprint, unit="km")
-    xpos = oX + pxlW * np.arange(0, cols)
-    ypos = oY + pxlH * np.arange(0, rows)
+    ga = utils.GeoAdapter(footprint)
     x, y = dataset.variables["x"], dataset.variables["y"]
-    assert (x.size, y.size) == (cols, rows)
-    assert np.allclose(x[:].data, xpos)
-    assert np.allclose(y[:].data, ypos)
+    assert (x.size, y.size) == (ga.cols, ga.rows)
+    assert np.allclose(x[:].data, ga.xpos())
+    assert np.allclose(y[:].data, ga.ypos())
 
 
 def check_time(dataset, dts):
