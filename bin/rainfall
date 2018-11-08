@@ -13,7 +13,6 @@ import imageio
 import os
 import sys
 
-import numpy as np
 from tdm.radar import utils
 
 strftime = datetime.datetime.strftime
@@ -71,7 +70,7 @@ def create_variables(dataset, cols, rows, dts):
         "units": "degrees_north"
     })
     lon = dataset.createVariable("lon", "f4", (xd.name, yd.name))
-    setncattr(lat, {
+    setncattr(lon, {
         "long_name": "longitude coordinate",
         "standard_name": "longitude",
         "units": "degrees_east"
@@ -119,6 +118,7 @@ def main(args):
     except FileExistsError:
         pass
     ga = utils.GeoAdapter(args.footprint)
+    xpos, ypos = ga.xpos(), ga.ypos()
     dts, names = zip(*utils.get_raw_radar_images(args.img_dir))
     for dts_chunk, names_chunk in utils.events(dts, names,
                                                min_len=args.min_len):
@@ -138,8 +138,8 @@ def main(args):
         )
         attach_crs(ds, ga.wkt)
         t[:] = [(_ - dts_chunk[0]).total_seconds() for _ in dts_chunk]
-        x[:] = ga.xpos()
-        y[:] = ga.ypos()
+        x[:], y[:] = xpos, ypos
+        lat[:], lon[:] = utils.get_lat_lon(ga.sr, xpos, ypos)
         fill_value = rf_rate._FillValue
         print("  0/%d" % len(names_chunk))
         for i, name in enumerate(names_chunk):

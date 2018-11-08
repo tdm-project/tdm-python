@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from itertools import product
 import itertools as it
 import os
 import numpy as np
@@ -135,3 +136,13 @@ def events(dts, names, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
         if dts[e - 1] - dts[b] < min_len:
             continue
         yield dts[b: e], names[b: e]
+
+
+def get_lat_lon(source_sr, xpos, ypos):
+    target_sr = osr.SpatialReference()
+    target_sr.ImportFromEPSG(4326)
+    transform = osr.CoordinateTransformation(source_sr, target_sr)
+    lon, lat, _ = zip(*transform.TransformPoints(list(product(xpos, ypos))))
+    lon = np.array(lon).reshape(len(ypos), len(xpos))
+    lat = np.array(lat).reshape(len(ypos), len(xpos))
+    return lat, lon
