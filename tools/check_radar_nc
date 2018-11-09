@@ -40,9 +40,11 @@ def check_time_unit(t):
 def check_geo(dataset, footprint):
     ga = utils.GeoAdapter(footprint)
     xpos, ypos = dataset.variables["x"], dataset.variables["y"]
+    xpos.set_auto_mask(False)
+    ypos.set_auto_mask(False)
     assert (xpos.size, ypos.size) == (ga.cols, ga.rows)
-    assert np.allclose(xpos[:].data, ga.xpos())
-    assert np.allclose(ypos[:].data, ga.ypos())
+    assert np.allclose(xpos[:], ga.xpos())
+    assert np.allclose(ypos[:], ga.ypos())
     lat, lon = dataset.variables["lat"], dataset.variables["lon"]
     s_srs = "%s:%s" % (ga.sr.GetAttrValue("AUTHORITY", 0),
                        ga.sr.GetAttrValue("AUTHORITY", 1))
@@ -59,11 +61,11 @@ def check_geo(dataset, footprint):
 
 def check_time(dataset, dts):
     t = dataset.variables["time"]
+    t.set_auto_mask(False)
     assert t.size == len(dts)
     start = check_time_unit(t)
     for i, dt in enumerate(dts):
-        item = t[i].data.item()  # FIXME: this does not need to be a masked arr
-        assert dt == start + datetime.timedelta(seconds=item)
+        assert dt == start + datetime.timedelta(seconds=t[i].item())
 
 
 def check_rainfall_rate(dataset, dts, img_dir):
