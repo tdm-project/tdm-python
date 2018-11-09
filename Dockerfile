@@ -4,7 +4,9 @@ MAINTAINER simone.leo@crs4.it
 RUN echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/99yes && \
     apt update && \
     apt upgrade && \
-    apt install libgdal-dev \
+    apt install \
+      gdal-bin \
+      libgdal-dev \
       python3-dev \
       python3-numpy \
       python3-pip && \

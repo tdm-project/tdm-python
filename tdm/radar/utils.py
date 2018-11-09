@@ -139,10 +139,17 @@ def events(dts, names, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
 
 
 def get_lat_lon(source_sr, xpos, ypos):
+    """\
+    Convert (x, y) points from source_sr to EPSG 4326.
+
+    Return lat and lon arrays corresponding to the input x and y positions
+    vectors, so that lat[i, j] and lon[i, j] are, respectively, the latitude
+    and longitude values for the (xpos[j], ypos[i]) point in the original ref.
+    """
     target_sr = osr.SpatialReference()
     target_sr.ImportFromEPSG(4326)
     transform = osr.CoordinateTransformation(source_sr, target_sr)
     lon, lat, _ = zip(*transform.TransformPoints(list(product(xpos, ypos))))
-    lon = np.array(lon).reshape(len(ypos), len(xpos))
-    lat = np.array(lat).reshape(len(ypos), len(xpos))
+    lon = np.array(lon).reshape(len(xpos), len(ypos)).T
+    lat = np.array(lat).reshape(len(xpos), len(ypos)).T
     return lat, lon
