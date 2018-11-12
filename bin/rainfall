@@ -127,14 +127,12 @@ def main(args):
     ga = utils.GeoAdapter(args.footprint)
     xpos, ypos = ga.xpos(), ga.ypos()
     lat_, lon_ = utils.get_lat_lon(ga.sr, xpos, ypos)
-    dts, names = zip(*utils.get_raw_radar_images(args.img_dir))
-    for dts_chunk, names_chunk in utils.events(dts, names,
-                                               min_len=args.min_len):
-        start = strftime(dts_chunk[0], utils.FMT)
-        stop = strftime(dts_chunk[-1], utils.FMT)
+    all_dts, all_names = zip(*utils.get_raw_radar_images(args.img_dir))
+    for dts, names in utils.events(all_dts, all_names, min_len=args.min_len):
+        start = strftime(dts[0], utils.FMT)
+        stop = strftime(dts[-1], utils.FMT)
         path = os.path.join(args.out_dir, "%s.nc" % start)
-        nt = len(dts_chunk)
-        print("saving %s (%d timepoints, until %s)" % (path, nt, stop))
+        print("saving %s (%d timepoints, until %s)" % (path, len(dts), stop))
         try:
             os.unlink(path)
         except FileNotFoundError:
@@ -144,16 +142,16 @@ def main(args):
         ds.set_always_mask(False)
         setncattr(ds, GLOBAL_ATTRIBUTES)
         t, x, y, lat, lon, rf_rate = create_variables(
-            ds, ga.cols, ga.rows, dts_chunk, t_chunks=args.t_chunks
+            ds, ga.cols, ga.rows, dts, t_chunks=args.t_chunks
         )
         attach_crs(ds, ga.wkt)
-        t[:] = [(_ - dts_chunk[0]).total_seconds() for _ in dts_chunk]
+        t[:] = [(_ - dts[0]).total_seconds() for _ in dts]
         x[:], y[:], lat[:], lon[:] = xpos, ypos, lat_, lon_
         fill_value = rf_rate._FillValue
-        print("  0/%d" % len(names_chunk))
-        for i, name in enumerate(names_chunk):
+        print("  0/%d" % len(names))
+        for i, name in enumerate(names):
             if ((i + 1) % 100 == 0):
-                print("  %d/%d" % (i + 1, len(names_chunk)))
+                print("  %d/%d" % (i + 1, len(names)))
             signal, mask = get_image_data(os.path.join(args.img_dir, name))
             rainfall = utils.estimate_rainfall(signal, mask)
             rainfall[mask == 0] = fill_value
