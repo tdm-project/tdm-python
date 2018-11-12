@@ -65,7 +65,7 @@ class GeoAdapter(object):
         return self.oY + self.pxlH * np.arange(self.rows)
 
 
-def get_raw_radar_images(root, after=MIN_DT, before=MAX_DT):
+def get_images(root, after=MIN_DT, before=MAX_DT):
     ls = []
     for bn in os.listdir(root):
         dt_string = splitext(bn)[0]
@@ -80,13 +80,18 @@ def get_raw_radar_images(root, after=MIN_DT, before=MAX_DT):
     return ls
 
 
-def get_grouped_raw_radar_images(root, delta, after=MIN_DT, before=MAX_DT):
+def group_images(dt_path_pairs, delta, after=MIN_DT):
     assert isinstance(delta, timedelta)
 
     def grouper(p):
         return after + delta * ((p[0] - after) // delta)
 
-    return it.groupby(get_raw_radar_images(root, after, before), grouper)
+    return it.groupby(dt_path_pairs, grouper)
+
+
+def get_grouped_images(root, delta, after=MIN_DT, before=MAX_DT):
+    pairs = get_images(root, after=after, before=before)
+    return group_images(pairs, delta, after=after)
 
 
 def estimate_rainfall(signal, mask):

@@ -127,7 +127,7 @@ def main(args):
     ga = utils.GeoAdapter(args.footprint)
     xpos, ypos = ga.xpos(), ga.ypos()
     lat_, lon_ = utils.get_lat_lon(ga.sr, xpos, ypos)
-    all_dts, all_names = zip(*utils.get_raw_radar_images(args.img_dir))
+    all_dts, all_names = zip(*utils.get_images(args.img_dir))
     for dts, names in utils.events(all_dts, all_names, min_len=args.min_len):
         start = strftime(dts[0], utils.FMT)
         stop = strftime(dts[-1], utils.FMT)

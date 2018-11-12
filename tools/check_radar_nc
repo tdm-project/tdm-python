@@ -78,7 +78,7 @@ def check_rainfall_rate(dataset, dts, img_dir):
 
 
 def check(nc_path, img_dir, footprint):
-    dts, paths = zip(*utils.get_raw_radar_images(img_dir))
+    dts, paths = zip(*utils.get_images(img_dir))
     ds = Dataset(nc_path, "r")
     check_geo(ds, footprint)
     check_time(ds, dts)

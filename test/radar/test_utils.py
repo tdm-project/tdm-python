@@ -108,17 +108,17 @@ class TestGetImages(unittest.TestCase):
 
     def test_get(self):
         exp_res = self.info[2:-1]
-        ls = utils.get_raw_radar_images(self.wd, self.AFTER, self.BEFORE)
+        ls = utils.get_images(self.wd, self.AFTER, self.BEFORE)
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
 
     def test_get_all(self):
         after, before = datetime.min, datetime.max
         exp_res = self.info
-        ls = utils.get_raw_radar_images(self.wd, after, before)
+        ls = utils.get_images(self.wd, after, before)
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
-        ls = utils.get_raw_radar_images(self.wd)
+        ls = utils.get_images(self.wd)
         self.assertEqual(len(ls), len(exp_res))
         self.assertEqual(ls, exp_res)
 
@@ -128,7 +128,7 @@ class TestGetImages(unittest.TestCase):
             datetime(2018, 5, 1, 23, 20): self.info[2:7],
             datetime(2018, 5, 1, 23, 25): self.info[7:12],
         }
-        res = {dt: list(g) for dt, g in utils.get_grouped_raw_radar_images(
+        res = {dt: list(g) for dt, g in utils.get_grouped_images(
             self.wd, delta, self.AFTER, self.BEFORE
         )}
         self.assertEqual(len(res), len(exp_res))
@@ -142,12 +142,12 @@ class TestGetImages(unittest.TestCase):
             datetime(2018, 5, 1, 23, 25): self.info[7:12],
             datetime(2018, 5, 1, 23, 30): self.info[12:],
         }
-        res = {dt: list(g) for dt, g in utils.get_grouped_raw_radar_images(
+        res = {dt: list(g) for dt, g in utils.get_grouped_images(
             self.wd, delta, datetime.min, datetime.max
         )}
         self.assertEqual(len(res), len(exp_res))
         self.assertEqual(res, exp_res)
-        res = {dt: list(g) for dt, g in utils.get_grouped_raw_radar_images(
+        res = {dt: list(g) for dt, g in utils.get_grouped_images(
             self.wd, delta
         )}
         self.assertEqual(len(res), len(exp_res))
