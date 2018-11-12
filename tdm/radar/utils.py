@@ -127,20 +127,20 @@ def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=None):
     gdal.GetDriverByName('GTiff').CreateCopy(out_path, tmp_ds)
 
 
-def events(dts, names, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
-    assert len(dts) == len(names)
+def events(dt_path_pairs, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
     if not isinstance(min_len, timedelta):
         min_len = timedelta(seconds=min_len)
-    deltas = np.array([(dts[i+1] - dts[i]).total_seconds()
-                       for i in range(len(dts) - 1)])
+    p, N = dt_path_pairs, len(dt_path_pairs)
+    deltas = np.array([(p[i+1][0] - p[i][0]).total_seconds()
+                       for i in range(N - 1)])
     big_delta_idx = np.argwhere(deltas > threshold)[:, 0]
     dts_idx = np.insert(1 + big_delta_idx, 0, 0)
-    dts_idx = np.append(dts_idx, len(dts))
+    dts_idx = np.append(dts_idx, N)
     for i in range(dts_idx.size - 1):
         b, e = dts_idx[i], dts_idx[i+1]
-        if dts[e - 1] - dts[b] < min_len:
+        if p[e - 1][0] - p[b][0] < min_len:
             continue
-        yield dts[b: e], names[b: e]
+        yield p[b: e]
 
 
 def get_lat_lon(source_sr, xpos, ypos):

@@ -23,34 +23,24 @@ class TestEvents(unittest.TestCase):
         for d in deltas:
             dts.append(dts[-1] + timedelta(seconds=d))
         names = [datetime.strftime(_, utils.FMT) for _ in dts]
+        dt_path_pairs = list(zip(dts, names))
 
-        events = list(utils.events(dts, names, min_len=100))
+        events = list(utils.events(dt_path_pairs, min_len=100))
         self.assertEqual(len(events), 4)
-        dt_chunks, name_chunks = zip(*events)
         exp_lengths = [1001, 10001 - 1001, 50001 - 10001, 100000 - 50001]
-        for seq in dt_chunks, name_chunks:
-            self.assertEqual([len(_) for _ in seq], exp_lengths)
-        self.assertEqual(dt_chunks[0], dts[:1001])
-        self.assertEqual(dt_chunks[1], dts[1001:10001])
-        self.assertEqual(dt_chunks[2], dts[10001:50001])
-        self.assertEqual(dt_chunks[3], dts[50001:])
-        self.assertEqual(name_chunks[0], names[:1001])
-        self.assertEqual(name_chunks[1], names[1001:10001])
-        self.assertEqual(name_chunks[2], names[10001:50001])
-        self.assertEqual(name_chunks[3], names[50001:])
+        self.assertEqual([len(_) for _ in events], exp_lengths)
+        self.assertEqual(events[0], dt_path_pairs[:1001])
+        self.assertEqual(events[1], dt_path_pairs[1001:10001])
+        self.assertEqual(events[2], dt_path_pairs[10001:50001])
+        self.assertEqual(events[3], dt_path_pairs[50001:])
 
-        events = list(utils.events(dts, names, min_len=timedelta(days=1)))
+        events = list(utils.events(dt_path_pairs, min_len=timedelta(days=1)))
         self.assertEqual(len(events), 3)
-        dt_chunks, name_chunks = zip(*events)
         exp_lengths = [10001 - 1001, 50001 - 10001, 100000 - 50001]
-        for seq in dt_chunks, name_chunks:
-            self.assertEqual([len(_) for _ in seq], exp_lengths)
-        self.assertEqual(dt_chunks[0], dts[1001:10001])
-        self.assertEqual(dt_chunks[1], dts[10001:50001])
-        self.assertEqual(dt_chunks[2], dts[50001:])
-        self.assertEqual(name_chunks[0], names[1001:10001])
-        self.assertEqual(name_chunks[1], names[10001:50001])
-        self.assertEqual(name_chunks[2], names[50001:])
+        self.assertEqual([len(_) for _ in events], exp_lengths)
+        self.assertEqual(events[0], dt_path_pairs[1001:10001])
+        self.assertEqual(events[1], dt_path_pairs[10001:50001])
+        self.assertEqual(events[2], dt_path_pairs[50001:])
 
     def test_single(self):
         N = 1000
@@ -61,11 +51,10 @@ class TestEvents(unittest.TestCase):
         for d in deltas:
             dts.append(dts[-1] + timedelta(seconds=d))
         names = [datetime.strftime(_, utils.FMT) for _ in dts]
-        events = list(utils.events(dts, names, min_len=100))
+        dt_path_pairs = list(zip(dts, names))
+        events = list(utils.events(dt_path_pairs, min_len=100))
         self.assertEqual(len(events), 1)
-        dt_chunk, name_chunk = events[0]
-        self.assertEqual(dt_chunk, dts)
-        self.assertEqual(name_chunk, names)
+        self.assertEqual(events[0], dt_path_pairs)
 
 
 class TestGetImages(unittest.TestCase):

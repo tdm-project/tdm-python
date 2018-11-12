@@ -127,8 +127,9 @@ def main(args):
     ga = utils.GeoAdapter(args.footprint)
     xpos, ypos = ga.xpos(), ga.ypos()
     lat_, lon_ = utils.get_lat_lon(ga.sr, xpos, ypos)
-    all_dts, all_names = zip(*utils.get_images(args.img_dir))
-    for dts, names in utils.events(all_dts, all_names, min_len=args.min_len):
+    dt_path_pairs = utils.get_images(args.img_dir)
+    for event in utils.events(dt_path_pairs, min_len=args.min_len):
+        dts, paths = zip(*event)
         start = strftime(dts[0], utils.FMT)
         stop = strftime(dts[-1], utils.FMT)
         path = os.path.join(args.out_dir, "%s.nc" % start)
@@ -148,11 +149,11 @@ def main(args):
         t[:] = [(_ - dts[0]).total_seconds() for _ in dts]
         x[:], y[:], lat[:], lon[:] = xpos, ypos, lat_, lon_
         fill_value = rf_rate._FillValue
-        print("  0/%d" % len(names))
-        for i, name in enumerate(names):
+        print("  0/%d" % len(paths))
+        for i, path in enumerate(paths):
             if ((i + 1) % 100 == 0):
-                print("  %d/%d" % (i + 1, len(names)))
-            signal, mask = get_image_data(os.path.join(args.img_dir, name))
+                print("  %d/%d" % (i + 1, len(paths)))
+            signal, mask = get_image_data(path)
             rainfall = utils.estimate_rainfall(signal, mask)
             rainfall[mask == 0] = fill_value
             rf_rate[i, :, :] = rainfall
