@@ -27,6 +27,7 @@ GLOBAL_ATTRIBUTES = {
 }
 
 TIME_UNIT_FMT = "%Y-%m-%d %H:%M:%S"
+T_CHUNKS = 30
 
 
 def get_image_data(path):
@@ -41,7 +42,7 @@ def setncattr(dataset, attrs):
 
 # CF conventions, sections 4.4 & 5.1
 # See also: https://code.mpimet.mpg.de/boards/1/topics/5765
-def create_variables(dataset, cols, rows, dts):
+def create_variables(dataset, cols, rows, dts, t_chunks=T_CHUNKS):
     timed = dataset.createDimension("time", len(dts))
     xd = dataset.createDimension("x", cols)
     yd = dataset.createDimension("y", rows)
@@ -81,8 +82,10 @@ def create_variables(dataset, cols, rows, dts):
     })
     rf_rate = dataset.createVariable(
         "rainfall_rate", "f4", (timed.name, xd.name, yd.name),
-        fill_value=-1.0, zlib=True, least_significant_digit=4
+        fill_value=-1.0, zlib=True, least_significant_digit=4,
+        chunksizes=(t_chunks, cols, rows)
     )
+    rf_rate.set_var_chunk_cache(t_chunks * rows * cols * 4, 5, 1.0)
     setncattr(rf_rate, {
         'long_name': 'estimated rainfall rate',
         'standard_name': 'rainfall_rate',
@@ -141,7 +144,7 @@ def main(args):
         ds.set_always_mask(False)
         setncattr(ds, GLOBAL_ATTRIBUTES)
         t, x, y, lat, lon, rf_rate = create_variables(
-            ds, ga.cols, ga.rows, dts_chunk
+            ds, ga.cols, ga.rows, dts_chunk, t_chunks=args.t_chunks
         )
         attach_crs(ds, ga.wkt)
         t[:] = [(_ - dts_chunk[0]).total_seconds() for _ in dts_chunk]
@@ -166,4 +169,6 @@ if __name__ == "__main__":
                         default=utils.MIN_EVENT_LEN,
                         help="skip events shorter than this")
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
+    parser.add_argument("--t-chunks", metavar="N", type=int, default=T_CHUNKS,
+                        help="chunk size along the t dimension")
     main(parser.parse_args(sys.argv[1:]))
