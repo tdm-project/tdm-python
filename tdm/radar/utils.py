@@ -6,6 +6,7 @@ import numpy as np
 
 import gdal
 from gdal import osr
+import imageio
 
 gdal.UseExceptions()
 
@@ -23,6 +24,8 @@ EVENT_THRESHOLD = 200
 
 # Ignore events that last less than this, in seconds
 MIN_EVENT_LEN = 24 * 60 * 60
+
+RAINFALL_FILL_VALUE = -1.0
 
 
 class GeoAdapter(object):
@@ -94,10 +97,19 @@ def get_grouped_images(root, delta, after=MIN_DT, before=MAX_DT):
     return group_images(pairs, delta, after=after)
 
 
-def estimate_rainfall(signal, mask):
+def get_image_data(path):
+    im = imageio.imread(path)
+    signal = im[:, :, 0].view(np.ma.MaskedArray)
+    signal.mask = im[:, :, 3] != 255
+    return signal
+
+
+def estimate_rainfall(masked_signal):
     "This is specific to XXX radar signal"
-    Z = 10**(0.1*(0.39216 * signal - 8.6))
-    return (Z/300)**(1/1.5) * mask
+    Z = 10**(0.1*(0.39216 * masked_signal - 8.6))
+    rf = (Z/300)**(1/1.5)
+    rf.set_fill_value(RAINFALL_FILL_VALUE)
+    return rf
 
 
 # https://gis.stackexchange.com/questions/139906

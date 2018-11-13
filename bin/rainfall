@@ -9,7 +9,6 @@ datasets, using the NetCDF Climate and Forecast (CF) Metadata Conventions
 from netCDF4 import Dataset
 import argparse
 import datetime
-import imageio
 import os
 import sys
 
@@ -28,11 +27,6 @@ GLOBAL_ATTRIBUTES = {
 
 TIME_UNIT_FMT = "%Y-%m-%d %H:%M:%S"
 T_CHUNKS = 30
-
-
-def get_image_data(path):
-    im = imageio.imread(path)
-    return im[:, :, 0], im[:, :, 3] == 255  # signal, mask
 
 
 def setncattr(dataset, attrs):
@@ -80,9 +74,10 @@ def create_variables(dataset, cols, rows, dts, t_chunks=T_CHUNKS):
         "standard_name": "longitude",
         "units": "degrees_east"
     })
+    fv = utils.RAINFALL_FILL_VALUE
     rf_rate = dataset.createVariable(
         "rainfall_rate", "f4", (timed.name, xd.name, yd.name),
-        fill_value=-1.0, zlib=True, least_significant_digit=4,
+        fill_value=fv, zlib=True, least_significant_digit=4,
         chunksizes=(t_chunks, cols, rows)
     )
     rf_rate.set_var_chunk_cache(t_chunks * rows * cols * 4, 5, 1.0)
@@ -148,15 +143,12 @@ def main(args):
         attach_crs(ds, ga.wkt)
         t[:] = [(_ - dts[0]).total_seconds() for _ in dts]
         x[:], y[:], lat[:], lon[:] = xpos, ypos, lat_, lon_
-        fill_value = rf_rate._FillValue
         print("  0/%d" % len(paths))
         for i, path in enumerate(paths):
             if ((i + 1) % 100 == 0):
                 print("  %d/%d" % (i + 1, len(paths)))
-            signal, mask = get_image_data(path)
-            rainfall = utils.estimate_rainfall(signal, mask)
-            rainfall[mask == 0] = fill_value
-            rf_rate[i, :, :] = rainfall
+            signal = utils.get_image_data(path)
+            rf_rate[i, :, :] = utils.estimate_rainfall(signal)
         ds.close()
 
 
