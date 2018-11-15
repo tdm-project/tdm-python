@@ -1,49 +1,52 @@
-import glob
 from datetime import datetime, timedelta
+from itertools import product
 import itertools as it
 import os
 import numpy as np
 
 import gdal
 from gdal import osr
+import imageio
 
 gdal.UseExceptions()
 
+strptime = datetime.strptime
+splitext = os.path.splitext
 
-def get_grid(fname, unit='km', send_raster=False):
-    "extract grid information from a geo image"
-    raster = gdal.Open(fname)
-    gt = raster.GetGeoTransform()
-    # FIXME We only deal with rectangular, axis aligned images
-    assert gt[2] == 0.0 and gt[4] == 0.0
-    oX, oY, pxlW, pxlH = gt[0], gt[3], gt[1], gt[5]
-    cols, rows = raster.RasterXSize, raster.RasterYSize
-    factor = {'km': 0.001, 'm': 1.0}[unit]
-    if send_raster:
-        return oX, oY, factor * pxlW, factor * pxlH, cols, rows, raster
-    else:
-        return oX, oY, factor * pxlW, factor * pxlH, cols, rows
+FMT = "%Y-%m-%d_%H:%M:%S"
+MIN_DT, MAX_DT = datetime.min, datetime.max
 
+# The radar is supposed to generate an image every minute. In practice, while
+# the peak is at 60s, deltas can go below 50 and above 70 (data from >120K
+# images). 200s seems a good threshold for separating between events (i.e., a
+# delta larger than that means the radar has been turned off and on again).
+EVENT_THRESHOLD = 200
 
-def compute_distance_field(fname):
-    oX, oY, pxlW, pxlH, cols, rows = get_grid(fname, unit='km')
-    x = pxlW * (np.arange(-(cols/2), (cols/2), 1) + 0.5)
-    y = pxlH * (np.arange(-(rows/2), (rows/2), 1) + 0.5)
-    xx, yy = np.meshgrid(x, y, sparse=True)
-    return 10 * np.log(xx**2 + yy**2)
+# Ignore events that last less than this, in seconds
+MIN_EVENT_LEN = 24 * 60 * 60
+
+RAINFALL_FILL_VALUE = -1.0
 
 
 class GeoAdapter(object):
+
     def __init__(self, template):
-        (self.oX,  self.oY, self.pxlW, self.pxlH,
-         self.cols, self.rows, raster) = get_grid(template, unit='m',
-                                                  send_raster=True)
-        self.wkt = raster.GetProjectionRef()
-        self.driver = gdal.GetDriverByName('GTiff')
+        self.raster = gdal.Open(template)
+        oX, pxlW, _1, oY, _2, pxlH = self.raster.GetGeoTransform()
+        # we only deal with rectangular, axis-aligned images
+        if _1 or _2:
+            raise RuntimeError("%s: unsupported transform")
+        self.wkt = self.raster.GetProjectionRef()
+        self.sr = osr.SpatialReference(wkt=self.wkt)
+        factor = self.sr.GetLinearUnits()  # mult factor to get meters
+        self.cols, self.rows = self.raster.RasterXSize, self.raster.RasterYSize
+        self.oX, self.oY = oX, oY
+        self.pxlW, self.pxlH = factor * pxlW, factor * pxlH
 
     def save_as_gtiff(self, fname, data, metadata=None):
-        raster = self.driver.Create(fname, self.cols, self.rows,
-                                    1, gdal.GDT_Float32)
+        raster = gdal.GetDriverByName('GTiff').Create(
+            fname, self.cols, self.rows, 1, gdal.GDT_Float32
+        )
         raster.SetGeoTransform((self.oX, self.pxlW, 0, self.oY, 0, self.pxlH))
         if isinstance(metadata, dict):
             raster.SetMetadata(metadata)
@@ -52,33 +55,61 @@ class GeoAdapter(object):
         raster.SetProjection(self.wkt)
         band.FlushCache()
 
+    def compute_distance_field(self):
+        x = self.pxlW * (np.arange(-(self.cols/2), (self.cols/2), 1) + 0.5)
+        y = self.pxlH * (np.arange(-(self.rows/2), (self.rows/2), 1) + 0.5)
+        xx, yy = np.meshgrid(x, y, sparse=True)
+        return 10 * np.log(xx**2 + yy**2)
 
-def get_raw_radar_images(root, after, before):
-    rgx_d = '[0-9]' * 4 + '-' + '[0-1][0-9]' + '-' + '[0-3][0-9]'
-    rgx_t = '[0-5][0-9]:[0-5][0-9]:[0-5][0-9]'
-    ext = '.png'
-    rgx = rgx_d + '_' + rgx_t + ext
-    strptime = datetime.strptime
-    basename, splitext = os.path.basename, os.path.splitext
-    v = ((strptime(splitext(basename(_))[0], '%Y-%m-%d_%H:%M:%S'), _)
-         for _ in sorted(glob.glob(os.path.join(root, rgx))))
-    return filter(lambda _: after < _[0] < before, v)
+    def xpos(self):
+        return self.oX + self.pxlW * np.arange(self.cols)
+
+    def ypos(self):
+        return self.oY + self.pxlH * np.arange(self.rows)
 
 
-def get_grouped_raw_radar_images(root, delta, after=None, before=None):
+def get_images(root, after=MIN_DT, before=MAX_DT):
+    ls = []
+    for bn in os.listdir(root):
+        dt_string = splitext(bn)[0]
+        try:
+            dt = strptime(dt_string, FMT)
+        except ValueError:
+            continue
+        if dt < after or dt > before:
+            continue
+        ls.append((dt, os.path.join(root, bn)))
+    ls.sort()
+    return ls
+
+
+def group_images(dt_path_pairs, delta, after=MIN_DT):
     assert isinstance(delta, timedelta)
-    after = after if after is not None else datetime(1000, 0, 0, 0, 0, 0)
-    before = before if before is not None else datetime(3000, 0, 0, 0, 0, 0)
 
     def grouper(p):
         return after + delta * ((p[0] - after) // delta)
-    return it.groupby(get_raw_radar_images(root, after, before), grouper)
+
+    return it.groupby(dt_path_pairs, grouper)
 
 
-def estimate_rainfall(signal, mask):
+def get_grouped_images(root, delta, after=MIN_DT, before=MAX_DT):
+    pairs = get_images(root, after=after, before=before)
+    return group_images(pairs, delta, after=after)
+
+
+def get_image_data(path):
+    im = imageio.imread(path)
+    signal = im[:, :, 0].view(np.ma.MaskedArray)
+    signal.mask = im[:, :, 3] != 255
+    return signal
+
+
+def estimate_rainfall(masked_signal):
     "This is specific to XXX radar signal"
-    Z = 10**(0.1*(0.39216 * signal - 8.6))
-    return (Z/300)**(1/1.5) * mask
+    Z = 10**(0.1*(0.39216 * masked_signal - 8.6))
+    rf = (Z/300)**(1/1.5)
+    rf.set_fill_value(RAINFALL_FILL_VALUE)
+    return rf
 
 
 # https://gis.stackexchange.com/questions/139906
@@ -106,3 +137,36 @@ def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=None):
                                       error_threshold)
     # Create the final warped raster
     gdal.GetDriverByName('GTiff').CreateCopy(out_path, tmp_ds)
+
+
+def events(dt_path_pairs, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
+    if not isinstance(min_len, timedelta):
+        min_len = timedelta(seconds=min_len)
+    p, N = dt_path_pairs, len(dt_path_pairs)
+    deltas = np.array([(p[i+1][0] - p[i][0]).total_seconds()
+                       for i in range(N - 1)])
+    big_delta_idx = np.argwhere(deltas > threshold)[:, 0]
+    dts_idx = np.insert(1 + big_delta_idx, 0, 0)
+    dts_idx = np.append(dts_idx, N)
+    for i in range(dts_idx.size - 1):
+        b, e = dts_idx[i], dts_idx[i+1]
+        if p[e - 1][0] - p[b][0] < min_len:
+            continue
+        yield p[b: e]
+
+
+def get_lat_lon(source_sr, xpos, ypos):
+    """\
+    Convert (x, y) points from source_sr to EPSG 4326.
+
+    Return lat and lon arrays corresponding to the input x and y positions
+    vectors, so that lat[i, j] and lon[i, j] are, respectively, the latitude
+    and longitude values for the (xpos[j], ypos[i]) point in the original ref.
+    """
+    target_sr = osr.SpatialReference()
+    target_sr.ImportFromEPSG(4326)
+    transform = osr.CoordinateTransformation(source_sr, target_sr)
+    lon, lat, _ = zip(*transform.TransformPoints(list(product(xpos, ypos))))
+    lon = np.array(lon).reshape(len(xpos), len(ypos)).T
+    lat = np.array(lat).reshape(len(xpos), len(ypos)).T
+    return lat, lon

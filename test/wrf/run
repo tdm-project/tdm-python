@@ -9,6 +9,8 @@ tests=(
     "configurator"
 )
 
+pushd "${this_dir}"
 for t in ${tests[@]}; do
     python test_${t}.py
 done
+popd
