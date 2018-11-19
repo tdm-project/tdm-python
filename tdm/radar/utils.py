@@ -47,13 +47,17 @@ class GeoAdapter(object):
         raster = gdal.GetDriverByName('GTiff').Create(
             fname, self.cols, self.rows, 1, gdal.GDT_Float32
         )
+        band = raster.GetRasterBand(1)
+        if isinstance(data, np.ma.MaskedArray):
+            band.WriteArray(data.filled())
+            band.SetNoDataValue(data.fill_value)
+        else:
+            band.WriteArray(data)
+        band.FlushCache()
         raster.SetGeoTransform((self.oX, self.pxlW, 0, self.oY, 0, self.pxlH))
+        raster.SetProjection(self.wkt)
         if isinstance(metadata, dict):
             raster.SetMetadata(metadata)
-        band = raster.GetRasterBand(1)
-        band.WriteArray(data)
-        raster.SetProjection(self.wkt)
-        band.FlushCache()
 
     def compute_distance_field(self):
         x = self.pxlW * (np.arange(-(self.cols/2), (self.cols/2), 1) + 0.5)
@@ -122,11 +126,10 @@ def get_wkt(srs_code):
     return srs.ExportToWkt()
 
 
-def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=None):
+def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=0.125):
     src_ds = gdal.Open(in_path)
     dst_wkt = get_wkt(t_srs)
     src_wkt = None if s_srs is None else get_wkt(s_srs)
-    error_threshold = error_threshold if error_threshold is not None else 0.125
     resampling = gdal.GRA_NearestNeighbour
     # Call AutoCreateWarpedVRT() to fetch default values for target raster
     # dimensions and geotransform
