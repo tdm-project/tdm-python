@@ -170,8 +170,16 @@ class TestSave(unittest.TestCase):
         band = dataset.GetRasterBand(1)
         m_band = band.GetMaskBand()
         self.assertEqual(band.GetMaskFlags(), gdal.GMF_NODATA)
-        ma = np.ma.masked_array(band.ReadAsArray(), mask=m_band.ReadAsArray())
-        self.assertTrue(np.ma.allequal(ma, rain))
+        ma = np.ma.masked_array(
+            band.ReadAsArray(),
+            mask=(m_band.ReadAsArray() == 0),
+            fill_value=band.GetNoDataValue()
+        )
+        self.assertTrue(np.array_equal(ma.mask, rain.mask))
+        self.assertTrue(np.ma.allclose(ma, rain))
+        self.assertEqual(dataset.GetGeoTransform(),
+                         (ga.oX, ga.pxlW, 0, ga.oY, 0, ga.pxlH))
+        self.assertEqual(dataset.GetProjectionRef(), ga.wkt)
 
 
 CASES = [
