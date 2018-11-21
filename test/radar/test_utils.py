@@ -179,7 +179,8 @@ class TestSave(unittest.TestCase):
         self.assertTrue(np.ma.allclose(ma, rain))
         self.assertEqual(dataset.GetGeoTransform(),
                          (ga.oX, ga.pxlW, 0, ga.oY, 0, ga.pxlH))
-        self.assertEqual(dataset.GetProjectionRef(), ga.wkt)
+        sr = gdal.osr.SpatialReference(wkt=dataset.GetProjectionRef())
+        self.assertTrue(sr.IsSame(ga.sr))
 
 
 CASES = [
