@@ -116,30 +116,20 @@ def estimate_rainfall(masked_signal):
     return rf
 
 
-# https://gis.stackexchange.com/questions/139906
-def get_wkt(srs_code):
-    # checks? we need no stinking checks!
-    geo, code = srs_code.split(':')
-    srs = osr.SpatialReference()
-    # force geo to EPSG for the time being
-    srs.ImportFromEPSG(int(code))
-    return srs.ExportToWkt()
+def band_to_ma(band):
+    """
+    Read a GDAL band as a numpy.ma.MaskedArray.
 
-
-def warp(in_path, out_path, t_srs, s_srs=None, error_threshold=0.125):
-    src_ds = gdal.Open(in_path)
-    dst_wkt = get_wkt(t_srs)
-    src_wkt = None if s_srs is None else get_wkt(s_srs)
-    resampling = gdal.GRA_NearestNeighbour
-    # Call AutoCreateWarpedVRT() to fetch default values for target raster
-    # dimensions and geotransform
-    tmp_ds = gdal.AutoCreateWarpedVRT(src_ds,
-                                      src_wkt,
-                                      dst_wkt,
-                                      resampling,
-                                      error_threshold)
-    # Create the final warped raster
-    gdal.GetDriverByName('GTiff').CreateCopy(out_path, tmp_ds)
+    https://trac.osgeo.org/gdal/wiki/rfc15_nodatabitmask
+    """
+    flags = band.GetMaskFlags()
+    if (flags & gdal.GMF_ALPHA):
+        raise RuntimeError("mask is actually an alpha channel")
+    m_band = band.GetMaskBand()
+    kwargs = {"mask": m_band.ReadAsArray() == 0}
+    if (flags & gdal.GMF_NODATA):
+        kwargs["fill_value"] = band.GetNoDataValue()
+    return np.ma.masked_array(band.ReadAsArray(), **kwargs)
 
 
 def events(dt_path_pairs, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):

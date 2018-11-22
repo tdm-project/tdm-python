@@ -181,6 +181,10 @@ class TestSave(unittest.TestCase):
                          (ga.oX, ga.pxlW, 0, ga.oY, 0, ga.pxlH))
         sr = gdal.osr.SpatialReference(wkt=dataset.GetProjectionRef())
         self.assertTrue(sr.IsSame(ga.sr))
+        # check band_to_ma
+        ma2 = utils.band_to_ma(band)
+        self.assertTrue(np.array_equal(ma2.mask, ma.mask))
+        self.assertTrue(np.ma.allclose(ma2, ma))
 
 
 CASES = [
