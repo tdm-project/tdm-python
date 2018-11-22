@@ -42,6 +42,7 @@ RUN pip install --no-cache-dir Cython && \
     netCDF4 \
     xarray \
     scipy \
+    cdo \
     pyyaml
 
 
