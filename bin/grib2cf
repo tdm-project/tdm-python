@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+"""\
+Convert a sequence of grib2 files in a single NetCDF4 dataset using the
+NetCDF Climate and Forecast (CF) Metadata Conventions (http://cfconventions.org) Version 1.6.
+"""
+
+import cdo
+import glob
+
+import argparse
+import datetime
+import os
+import sys
+
+import numpy as np
+
+def main(args):
+    glob_path = "{}/{}_{}_*".format(args.input_dir,
+                                    args.product_type,
+                                    args.start_time)
+    gribs = sorted(glob.glob(glob_path))
+    c = cdo.Cdo()
+    ofile = "{}/{}_{}.nc".format(args.output_dir,
+                                 args.product_type,
+                                 args.start_time)
+    c.cat(input=' '.join(gribs), output=ofile,
+          options='-r -f nc')
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('product_type', metavar="PRODUCT_TYPE")
+    parser.add_argument('start_time', metavar="START_TIME")
+    parser.add_argument('-d', '--input-dir', metavar="INPUT_DIR",
+                        default=".")
+    parser.add_argument('-O', '--output-dir', metavar="OUTPUT_DIR",
+                        default=".")        
+    main(parser.parse_args(sys.argv[1:]))
