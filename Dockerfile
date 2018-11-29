@@ -8,6 +8,7 @@ RUN echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/99yes && \
       gdal-bin \
       libeccodes-dev \
       libgdal-dev \
+      libudunits2-dev \
       netcdf-bin \
       python3-dev \
       python3-numpy \
@@ -35,6 +36,7 @@ RUN CFLAGS="$(gdal-config --cflags)" pip install --no-cache-dir \
 RUN pip install --no-cache-dir Cython && \
     pip install --no-cache-dir \
         cdo \
+        cf-units \
         imageio \
         netCDF4 \
         pyyaml \

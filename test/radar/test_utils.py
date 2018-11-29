@@ -5,8 +5,14 @@ import shutil
 import tempfile
 import unittest
 
+import gdal
 import numpy as np
 import tdm.radar.utils as utils
+
+gdal.UseExceptions()
+
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class TestEvents(unittest.TestCase):
@@ -143,9 +149,48 @@ class TestGetImages(unittest.TestCase):
         self.assertEqual(res, exp_res)
 
 
+class TestSave(unittest.TestCase):
+
+    def setUp(self):
+        self.wd = tempfile.mkdtemp(prefix="tdm_")
+        self.raw_fn = os.path.join(THIS_DIR, "data", "2018-05-01_23:00:04.png")
+        self.template = os.path.join(THIS_DIR, "data", "radarfootprint.tif")
+
+    def tearDown(self):
+        shutil.rmtree(self.wd)
+
+    def test_gtiff(self):
+        signal = utils.get_image_data(self.raw_fn)
+        rain = utils.estimate_rainfall(signal)
+        ga = utils.GeoAdapter(self.template)
+        out_fn = os.path.join(self.wd, "sample.tif")
+        ga.save_as_gtiff(out_fn, rain)
+        dataset = gdal.Open(out_fn)
+        self.assertEqual(dataset.RasterCount, 1)
+        band = dataset.GetRasterBand(1)
+        m_band = band.GetMaskBand()
+        self.assertEqual(band.GetMaskFlags(), gdal.GMF_NODATA)
+        ma = np.ma.masked_array(
+            band.ReadAsArray(),
+            mask=(m_band.ReadAsArray() == 0),
+            fill_value=band.GetNoDataValue()
+        )
+        self.assertTrue(np.array_equal(ma.mask, rain.mask))
+        self.assertTrue(np.ma.allclose(ma, rain))
+        self.assertEqual(dataset.GetGeoTransform(),
+                         (ga.oX, ga.pxlW, 0, ga.oY, 0, ga.pxlH))
+        sr = gdal.osr.SpatialReference(wkt=dataset.GetProjectionRef())
+        self.assertTrue(sr.IsSame(ga.sr))
+        # check band_to_ma
+        ma2 = utils.band_to_ma(band)
+        self.assertTrue(np.array_equal(ma2.mask, ma.mask))
+        self.assertTrue(np.ma.allclose(ma2, ma))
+
+
 CASES = [
     TestEvents,
     TestGetImages,
+    TestSave,
 ]
 
 
