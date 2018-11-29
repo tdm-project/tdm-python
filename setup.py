@@ -11,7 +11,7 @@ setup(
         'bin/gfs_fetch',
         'bin/link_grib',
         'bin/rainfall',
-        'bin/wrf_configurator', 
-        'bin/grib2cf',       
+        'bin/wrf_configurator',
+        'bin/grib2cf',
     ],
 )
