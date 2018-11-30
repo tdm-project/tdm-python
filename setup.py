@@ -10,6 +10,7 @@ setup(
     scripts=[
         'bin/gfs_fetch',
         'bin/link_grib',
+        'bin/radar_events',
         'bin/rainfall',
         'bin/wrf_configurator',
         'bin/grib2cf',
