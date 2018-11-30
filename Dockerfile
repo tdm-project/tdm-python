@@ -11,7 +11,6 @@ RUN echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/99yes && \
       libudunits2-dev \
       netcdf-bin \
       python3-dev \
-      python3-numpy \
       python3-pip \
       wget && \
     apt-get clean && \
@@ -30,10 +29,11 @@ RUN wget ${cdourl} && \
     cd .. && \
     rm -rf ${cdosrc}*
 
-RUN CFLAGS="$(gdal-config --cflags)" pip install --no-cache-dir \
-    gdal==$(gdal-config --version)
-
-RUN pip install --no-cache-dir Cython && \
+RUN pip install --no-cache-dir \
+        Cython \
+	numpy && \
+    CFLAGS="$(gdal-config --cflags)" pip install --no-cache-dir \
+        gdal==$(gdal-config --version) && \
     pip install --no-cache-dir \
         cdo \
         cf-units \
