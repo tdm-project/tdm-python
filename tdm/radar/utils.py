@@ -136,6 +136,8 @@ def events(dt_path_pairs, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
     if not isinstance(min_len, timedelta):
         min_len = timedelta(seconds=min_len)
     p, N = dt_path_pairs, len(dt_path_pairs)
+    if N == 0:
+        return
     deltas = np.array([(p[i+1][0] - p[i][0]).total_seconds()
                        for i in range(N - 1)])
     big_delta_idx = np.argwhere(deltas > threshold)[:, 0]

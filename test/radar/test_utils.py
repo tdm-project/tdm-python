@@ -62,6 +62,15 @@ class TestEvents(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0], dt_path_pairs)
 
+    def test_small(self):
+        dt_path_pairs = [(datetime(2018, 1, 1, 0, 0, 0), "/foo/bar")]
+        events = list(utils.events(dt_path_pairs, min_len=0))
+        self.assertEqual(events, [dt_path_pairs])
+        events = list(utils.events(dt_path_pairs))
+        self.assertEqual(events, [])
+        events = list(utils.events([]))
+        self.assertEqual(events, [])
+
 
 class TestGetImages(unittest.TestCase):
 
