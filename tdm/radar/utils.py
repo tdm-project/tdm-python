@@ -14,6 +14,7 @@ strptime = datetime.strptime
 splitext = os.path.splitext
 
 FMT = "%Y-%m-%d_%H:%M:%S"
+FMT_LEN = 4 + 5 * 3  # %Y is 4 chars, other fields are 2 chars
 MIN_DT, MAX_DT = datetime.min, datetime.max
 
 # The radar is supposed to generate an image every minute. In practice, while
@@ -73,9 +74,18 @@ class GeoAdapter(object):
 
 
 def get_images(root, after=MIN_DT, before=MAX_DT):
+    """\
+    Get the file names of raw PNG radar images. The pattern seen so far is:
+
+      <RADAR_TAG><TIMESTAMP>.png
+
+    Assumes that the basename, after removing the '.png' extension, ends with
+    the formatted datetime, allowing for any combination of characters before
+    that. Returns (datetime, path) pairs, ignoring names that do not match.
+    """
     ls = []
     for bn in os.listdir(root):
-        dt_string = splitext(bn)[0]
+        dt_string = splitext(bn)[0][-FMT_LEN:]
         try:
             dt = strptime(dt_string, FMT)
         except ValueError:

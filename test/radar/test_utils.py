@@ -74,6 +74,7 @@ class TestEvents(unittest.TestCase):
 
 class TestGetImages(unittest.TestCase):
 
+    TAG = "cag01est2400"
     FMT = "%Y-%m-%d_%H:%M:%S"
     AFTER = datetime(2018, 5, 1, 23, 20)
     BEFORE = datetime(2018, 5, 1, 23, 30)
@@ -100,7 +101,7 @@ class TestGetImages(unittest.TestCase):
         self.wd = tempfile.mkdtemp(prefix="tdm_")
         self.info = []
         for name in self.SAMPLE:
-            p = os.path.join(self.wd, "%s.png" % name)
+            p = os.path.join(self.wd, "%s%s.png" % (self.TAG, name))
             with io.open(p, "wb"):
                 pass
             self.info.append((datetime.strptime(name, self.FMT), p))  # sorted
