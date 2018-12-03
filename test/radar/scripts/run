@@ -14,7 +14,7 @@ geotiff_dir="${wd}/geotiff"
 rainfall -l 60 "${data}"/signal "${data}"/radarfootprint.tif -o "${netcdf_dir}"
 "${tools}"/check_radar_nc "${netcdf_dir}" "${data}"/signal "${data}"/radarfootprint.tif
 nc_ds=$(find "${netcdf_dir}" -name '*.nc' | head -n 1)
-"${tools}"/radar_nc_to_geo "${nc_ds}" -o "${netcdf_dir}"/geotiff
+radar_nc_to_geo "${nc_ds}" -o "${netcdf_dir}"/geotiff
 "${tools}"/check_raw_to_warped "${data}"/signal "${data}"/radarfootprint.tif "${netcdf_dir}"/geotiff
 
 rm -rf "${wd}"

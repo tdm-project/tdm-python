@@ -11,6 +11,7 @@ setup(
         'bin/gfs_fetch',
         'bin/link_grib',
         'bin/radar_events',
+        'bin/radar_nc_to_geo',
         'bin/rainfall',
         'bin/wrf_configurator',
         'bin/grib2cf',
