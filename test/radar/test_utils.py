@@ -163,7 +163,9 @@ class TestSave(unittest.TestCase):
 
     def setUp(self):
         self.wd = tempfile.mkdtemp(prefix="tdm_")
-        self.raw_fn = os.path.join(THIS_DIR, "data", "2018-05-01_23:00:04.png")
+        self.raw_fn = os.path.join(
+            THIS_DIR, "data", "signal", "2018-05-01_23:00:04.png"
+        )
         self.template = os.path.join(THIS_DIR, "data", "radarfootprint.tif")
 
     def tearDown(self):
