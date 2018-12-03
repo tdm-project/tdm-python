@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+"""\
+Split raw radar images into per-event directories.
+"""
+
+import argparse
+import datetime
+import os
+import sys
+
+from tdm.radar import utils
+
+basename = os.path.basename
+join = os.path.join
+strftime = datetime.datetime.strftime
+
+
+def main(args):
+    print("scanning %s" % args.in_dir)
+    dt_path_pairs = utils.get_images(args.in_dir)
+    fmt = utils.FMT
+    for event in utils.events(dt_path_pairs, min_len=args.min_len):
+        start_str = strftime(event[0][0], fmt)
+        out_subdir = join(args.out_dir, start_str)
+        try:
+            os.makedirs(out_subdir)
+        except FileExistsError:
+            pass
+        print("  event from: %s (%d time points)" % (start_str, len(event)))
+        for dt, p in event:
+            out_p = join(out_subdir, strftime(dt, fmt))
+            with open(p, "rb") as fi, open(out_p, "wb") as fo:
+                fo.write(fi.read())
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("in_dir", metavar="INPUT_DIR")
+    parser.add_argument("-l", "--min-len", metavar="N_SECONDS", type=int,
+                        default=utils.MIN_EVENT_LEN,
+                        help="skip events shorter than N_SECONDS")
+    parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
+    main(parser.parse_args(sys.argv[1:]))

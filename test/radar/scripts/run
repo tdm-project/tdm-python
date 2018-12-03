@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+this="${BASH_SOURCE-$0}"
+this_dir=$(cd -P -- "$(dirname -- "${this}")" && pwd -P)
+data="${this_dir}/../data"
+tools="${this_dir}/../../../tools"
+
+wd=$(mktemp -d)
+netcdf_dir="${wd}/netcdf"
+geotiff_dir="${wd}/geotiff"
+
+tdm_rainfall -l 60 "${data}"/signal "${data}"/radarfootprint.tif -o "${netcdf_dir}"
+"${tools}"/check_radar_nc "${netcdf_dir}" "${data}"/signal "${data}"/radarfootprint.tif
+nc_ds=$(find "${netcdf_dir}" -name '*.nc' | head -n 1)
+tdm_radar_nc_to_geo "${nc_ds}" -o "${netcdf_dir}"/geotiff
+"${tools}"/check_raw_to_warped "${data}"/signal "${data}"/radarfootprint.tif "${netcdf_dir}"/geotiff
+
+rm -rf "${wd}"

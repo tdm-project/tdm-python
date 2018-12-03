@@ -62,9 +62,19 @@ class TestEvents(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0], dt_path_pairs)
 
+    def test_small(self):
+        dt_path_pairs = [(datetime(2018, 1, 1, 0, 0, 0), "/foo/bar")]
+        events = list(utils.events(dt_path_pairs, min_len=0))
+        self.assertEqual(events, [dt_path_pairs])
+        events = list(utils.events(dt_path_pairs))
+        self.assertEqual(events, [])
+        events = list(utils.events([]))
+        self.assertEqual(events, [])
+
 
 class TestGetImages(unittest.TestCase):
 
+    TAG = "cag01est2400"
     FMT = "%Y-%m-%d_%H:%M:%S"
     AFTER = datetime(2018, 5, 1, 23, 20)
     BEFORE = datetime(2018, 5, 1, 23, 30)
@@ -91,7 +101,7 @@ class TestGetImages(unittest.TestCase):
         self.wd = tempfile.mkdtemp(prefix="tdm_")
         self.info = []
         for name in self.SAMPLE:
-            p = os.path.join(self.wd, "%s.png" % name)
+            p = os.path.join(self.wd, "%s%s.png" % (self.TAG, name))
             with io.open(p, "wb"):
                 pass
             self.info.append((datetime.strptime(name, self.FMT), p))  # sorted
@@ -153,7 +163,9 @@ class TestSave(unittest.TestCase):
 
     def setUp(self):
         self.wd = tempfile.mkdtemp(prefix="tdm_")
-        self.raw_fn = os.path.join(THIS_DIR, "data", "2018-05-01_23:00:04.png")
+        self.raw_fn = os.path.join(
+            THIS_DIR, "data", "signal", "2018-05-01_23:00:04.png"
+        )
         self.template = os.path.join(THIS_DIR, "data", "radarfootprint.tif")
 
     def tearDown(self):

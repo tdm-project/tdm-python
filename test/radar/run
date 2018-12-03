@@ -14,3 +14,5 @@ for t in ${tests[@]}; do
     python test_${t}.py
 done
 popd
+
+"${this_dir}"/scripts/run
