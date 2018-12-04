@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+# No real check for now, except for the presence of some attributes.
+
+from netCDF4 import Dataset
+import argparse
+import os
+import sys
+
+
+def dump_nc_attrs(obj, indent=0):
+    for k in obj.ncattrs():
+        print("%s%s: %s" % (" " * indent, k, obj.getncattr(k)))
+
+
+def check(nc_path):
+    ds = Dataset(nc_path, "r")
+    print("  global attributes:")
+    dump_nc_attrs(ds, indent=4)
+    temp = ds.variables["t"]
+    print("  variable 't':")
+    dump_nc_attrs(temp, indent=4)
+    gmap = ds.variables["rotated_pole"]
+    print("  variable 'rotated_pole':")
+    dump_nc_attrs(gmap, indent=4)
+
+
+def main(args):
+    nc_paths = [os.path.join(args.nc_dir, _)
+                for _ in os.listdir(args.nc_dir)
+                if _.endswith(".nc")]
+    print("found %d files" % len(nc_paths))
+    for p in nc_paths:
+        print("checking: '%s'" % p)
+        check(p)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("nc_dir", metavar="NETCDF_DIR")
+    main(parser.parse_args(sys.argv[1:]))

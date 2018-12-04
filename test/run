@@ -8,6 +8,7 @@ this_dir=$(cd -P -- "$(dirname -- "${this}")" && pwd -P)
 dirs=(
     "gfs"
     "radar"
+    "sim"
     "wrf"
 )
 
