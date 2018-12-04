@@ -11,7 +11,7 @@ wd=$(mktemp -d)
 netcdf_dir="${wd}/netcdf"
 mkdir -p "${netcdf_dir}"
 
-tdm_grib2cf -d "${data}" -O "${netcdf_dir}" bolam 2018071300
+tdm_grib2cf -i "${data}" -o "${netcdf_dir}"
 nc_ds=$(find "${netcdf_dir}" -name '*.nc' | head -n 1)
 "${tools}"/check_sim_nc "${netcdf_dir}"
 
