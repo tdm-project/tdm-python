@@ -7,31 +7,45 @@ NetCDF Climate and Forecast (CF) Metadata Conventions
 """
 
 import argparse
-import glob
+import os
 import sys
 
 import cdo
 
 
+def get_gribs(args):
+    gribs = []
+    for name in os.listdir(args.input):
+        if not name.endswith(".grib2"):
+            continue
+        if args.model not in name:
+            continue
+        if args.start not in name:
+            continue
+        gribs.append(os.path.join(args.input, name))
+    return gribs
+
+
 def main(args):
-    glob_path = "{}/{}_{}_*".format(args.input_dir,
-                                    args.product_type,
-                                    args.start_time)
-    gribs = sorted(glob.glob(glob_path))
+    gribs = get_gribs(args)
+    print("'%s': %d files" % (args.input, len(gribs)))
+    if not gribs:
+        sys.exit("no files selected, aborting")
+    tag = args.out_tag or os.path.basename(args.input)
+    out_fn = os.path.join(args.output, "%s.nc" % tag)
     c = cdo.Cdo()
-    ofile = "{}/{}_{}.nc".format(args.output_dir,
-                                 args.product_type,
-                                 args.start_time)
-    c.cat(input=' '.join(gribs), output=ofile,
-          options='-r -f nc')
+    try:
+        os.makedirs(args.output)
+    except FileExistsError:
+        pass
+    c.cat(input=' '.join(gribs), output=out_fn, options='-r -f nc')
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('product_type', metavar="PRODUCT_TYPE")
-    parser.add_argument('start_time', metavar="START_TIME")
-    parser.add_argument('-d', '--input-dir', metavar="INPUT_DIR",
-                        default=".")
-    parser.add_argument('-O', '--output-dir', metavar="OUTPUT_DIR",
-                        default=".")
+    parser.add_argument('-i', '--input', metavar="DIR", default=".")
+    parser.add_argument('-o', '--output', metavar="DIR", default=".")
+    parser.add_argument('-t', '--out-tag', metavar="STRING")
+    parser.add_argument('--model', metavar="STRING", default="")
+    parser.add_argument('--start', metavar="STRING", default="")
     main(parser.parse_args(sys.argv[1:]))
