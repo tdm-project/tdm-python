@@ -76,8 +76,8 @@ class MemMasterBuilder(object):
 class PathBuilder(object):
     def __init__(self, desc):
         self.product_root = os.path.join(
-            'tdm/odata/product', desc['product_group'],
-            desc['product_class'], desc['uid'])
+            'tdm/odata/product', desc['group'],
+            desc['class'], desc['uid'])
 
     def build(self, *args):
         return os.path.join(self.product_root, *args)
@@ -90,12 +90,21 @@ def get_simulation_details(args, dataset):
     lats = dataset.coords['lat']
     # FIXME history should contain the relevant provenance
     # details when we have it
+    basename, ext = os.path.splitext(os.path.basename(args.nc_path))
+    parts = basename.split('_')
+    pclass = parts[0]
+    puid = parts[-1]
+    pname = '_'.join(parts[1:-1])
+    pgroup = args.product_group if args.product_group else 'simulation'
+    pclass = args.product_class if args.product_class else pclass
+    puid = args.instance_uid if args.instance_uid else puid
     simulation_details = {
-        'product_group': args.product_group,
-        'product_class': args.product_class,
-        'uid': args.instance_uid,
+        'group': pgroup,
+        'class': pclass,
+        'name': pname,
+        'uid': puid,
         'path': args.nc_path,
-        'history': ['Extracted by xxxx'],
+        'history': ['Extracted by tdm_map_to_tree (V0.0)'],
         'start_time': to_datetime(times[0]),
         'end_time': to_datetime(times[-1]),
         'lon_range': to_coord_range(lons),
