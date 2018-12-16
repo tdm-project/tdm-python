@@ -32,7 +32,7 @@ def main(args):
         pass
     fin  = args.nc_path
     root, ext = os.path.splitext(os.path.basename(fin))
-    fout = ''.join([root, '-lonlat', ext])
+    fout = os.path.join(args.out_dir, ''.join([root, '-lonlat', ext]))
     xfirst, xsize, xinc = args.lon_range.split(':')
     yfirst, ysize, yinc = args.lat_range.split(':')    
     map_to_region(fin, fout, xfirst, xinc, xsize, yfirst, yinc, ysize)
