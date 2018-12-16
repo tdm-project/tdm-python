@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument("--product-group", metavar="PRODUCT_GROUP",
                         help="e.g., meteosim", default='meteosim')
     parser.add_argument("--product-class", metavar="PRODUCT_CLASS",
-                        help="e.g., moloch", default='moloch')
+                        help="e.g., moloch")
     parser.add_argument("--instance-uid", metavar="UID",
                         help="an unique identifier for this dataset")
     parser.add_argument("--url-root", metavar="URL_ROOT",
