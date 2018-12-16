@@ -4,10 +4,10 @@ set -euo pipefail
 
 # bash grib2cf.sh in_dir out_dir
 
-in_dir=${1:=/data/simulations/netcdf}
-out_dir=${2:=/data/simulations/netcdf-lonlat}
-lon_range=${3:="4.5:512:0.0226"}
-lat_range=${4:="36.0:512:0.0226"}
+in_dir=${1:-/data/simulations/netcdf}
+out_dir=${2:-/data/simulations/netcdf-lonlat}
+lon_range=${3:-"4.5:512:0.0226"}
+lat_range=${4:-"36.0:512:0.0226"}
 
 
 wd=$(mktemp -d)
