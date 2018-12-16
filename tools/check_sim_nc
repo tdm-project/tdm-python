@@ -20,9 +20,6 @@ def check(nc_path):
     temp = ds.variables["time"]
     print("  variable 'time':")
     dump_nc_attrs(temp, indent=4)
-    lon = ds.variables["lon"]
-    print("  variable 'lon':")
-    dump_nc_attrs(lon, indent=4)
 
 
 def main(args):
