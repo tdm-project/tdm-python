@@ -13,7 +13,7 @@ import cdo
 import subprocess
 import shutil
 import tempfile
-
+import uuid
 
 def get_files(files_dir, ext):
     files = []
@@ -29,7 +29,7 @@ def convert_to_nc(gribs, writable_dir):
     for g in gribs:
         nc = os.path.join(ncs_dir,
                           os.path.splitext(os.path.basename(g))[0] + '.nc')
-        subprocess.run(["wgrib2", g, '-netcdf', nc])
+        subprocess.run(["wgrib2", g, '-nc4', '-netcdf', nc])
     return ncs_dir
 
 
@@ -53,18 +53,18 @@ def main(args):
     except FileExistsError:
         pass
     ncs_dir = convert_to_nc(gribs, args.output)
-    if args.product_class and args.name:
-        tag = '{}_{}_{}.nc'.format(args.product_class, args.name,
-                                   args.instance_uid)
+    if args.product_class and args.name and args.instance_uid:
+        tag = '{}_{}_{}'.format(args.product_class, args.name,
+                                args.instance_uid)
     else:
-        tag = os.path.basename(args.input)
+        tag = '{}_{}'.format(os.path.basename(args.input), uuid.uuid4())
     out_fn = os.path.join(args.output, "%s.nc" % tag)
     concatenate(ncs_dir, out_fn)
     shutil.rmtree(ncs_dir)
-    annotations = {'product': 'meteosim',
-                   'product_class': args.product_class,
-                   'uid': args.instance_uid}
-    annotate(out_fn, annotations)
+    # annotations = {'product': 'meteosim',
+    #                'product_class': args.product_class,
+    #                'uid': args.instance_uid}
+    # annotate(out_fn, annotations)
 
 
 if __name__ == "__main__":
