@@ -77,7 +77,7 @@ class PathBuilder(object):
     def __init__(self, dir_root, desc):
         self.product_root = os.path.join(
             dir_root, 'tdm/odata/product', desc['group'],
-            desc['class'], desc['uid'])
+            desc['class'], desc['name'], desc['uid'])
 
     def build(self, *args):
         return os.path.join(self.product_root, *args)
