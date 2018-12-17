@@ -9,43 +9,73 @@ NetCDF Climate and Forecast (CF) Metadata Conventions
 import argparse
 import os
 import sys
-
 import cdo
+import subprocess
+import shutil
+import tempfile
+import uuid
+
+def get_files(files_dir, ext):
+    files = []
+    for name in os.listdir(files_dir):
+        if not name.endswith(ext):
+            continue
+        files.append(os.path.join(files_dir, name))
+    return files
 
 
-def get_gribs(args):
-    gribs = []
-    for name in os.listdir(args.input):
-        if not name.endswith(".grib2"):
-            continue
-        if args.model not in name:
-            continue
-        if args.start not in name:
-            continue
-        gribs.append(os.path.join(args.input, name))
-    return gribs
+def convert_to_nc(gribs, writable_dir):
+    ncs_dir = tempfile.mkdtemp(dir=writable_dir)
+    for g in gribs:
+        nc = os.path.join(ncs_dir,
+                          os.path.splitext(os.path.basename(g))[0] + '.nc')
+        subprocess.run(["wgrib2", g, '-nc4', '-netcdf', nc])
+    return ncs_dir
+
+
+def concatenate(ncs_dir, output_nc):
+    ncs = sorted(get_files(ncs_dir, '.nc'))
+    c = cdo.Cdo()
+    c.cat(input=' '.join(ncs), output=output_nc,  options='-r -f nc')
+
+
+def annotate(ncfile, annotations):
+    pass
 
 
 def main(args):
-    gribs = get_gribs(args)
+    gribs = get_files(args.input, '.grib2')
     print("'%s': %d files" % (args.input, len(gribs)))
     if not gribs:
         sys.exit("no files selected, aborting")
-    tag = args.out_tag or os.path.basename(args.input)
-    out_fn = os.path.join(args.output, "%s.nc" % tag)
-    c = cdo.Cdo()
     try:
         os.makedirs(args.output)
     except FileExistsError:
         pass
-    c.cat(input=' '.join(gribs), output=out_fn, options='-r -f nc')
+    ncs_dir = convert_to_nc(gribs, args.output)
+    if args.product_class and args.name and args.instance_uid:
+        tag = '{}_{}_{}'.format(args.product_class, args.name,
+                                args.instance_uid)
+    else:
+        tag = '{}_{}'.format(os.path.basename(args.input), uuid.uuid4())
+    out_fn = os.path.join(args.output, "%s.nc" % tag)
+    concatenate(ncs_dir, out_fn)
+    shutil.rmtree(ncs_dir)
+    # annotations = {'product': 'meteosim',
+    #                'product_class': args.product_class,
+    #                'uid': args.instance_uid}
+    # annotate(out_fn, annotations)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('-i', '--input', metavar="DIR", default=".")
     parser.add_argument('-o', '--output', metavar="DIR", default=".")
-    parser.add_argument('-t', '--out-tag', metavar="STRING")
-    parser.add_argument('--model', metavar="STRING", default="")
-    parser.add_argument('--start', metavar="STRING", default="")
+    parser.add_argument("--product-group", metavar="PRODUCT_GROUP",
+                        help="e.g., meteosim", default='meteosim')
+    parser.add_argument("--product-class", metavar="PRODUCT_CLASS",
+                        help="e.g., moloch")
+    parser.add_argument('--name', metavar="STRING")
+    parser.add_argument("--instance-uid", metavar="UID",
+                        help="an unique identifier for this dataset")
     main(parser.parse_args(sys.argv[1:]))

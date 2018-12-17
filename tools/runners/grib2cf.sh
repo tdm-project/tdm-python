@@ -2,8 +2,10 @@
 
 set -euo pipefail
 
-in_dir="/data/simulations/grib2"
-out_dir="/data/simulations/netcdf"
+# bash grib2cf.sh in_dir out_dir
+
+in_dir=${1:-/data/simulations/grib2}
+out_dir=${2:-/data/simulations/netcdf}
 
 wd=$(mktemp -d)
 echo "work dir: ${wd}"

@@ -10,6 +10,8 @@ setup(
     scripts=[
         'bin/tdm_gfs_fetch',
         'bin/tdm_link_grib',
+        'bin/tdm_map_to_lonlat',
+        'bin/tdm_map_to_tree',
         'bin/tdm_radar_events',
         'bin/tdm_radar_nc_to_geo',
         'bin/tdm_rainfall',

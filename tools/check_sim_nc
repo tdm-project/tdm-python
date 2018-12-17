@@ -17,12 +17,9 @@ def check(nc_path):
     ds = Dataset(nc_path, "r")
     print("  global attributes:")
     dump_nc_attrs(ds, indent=4)
-    temp = ds.variables["t"]
-    print("  variable 't':")
+    temp = ds.variables["time"]
+    print("  variable 'time':")
     dump_nc_attrs(temp, indent=4)
-    gmap = ds.variables["rotated_pole"]
-    print("  variable 'rotated_pole':")
-    dump_nc_attrs(gmap, indent=4)
 
 
 def main(args):
