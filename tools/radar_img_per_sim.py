@@ -16,7 +16,6 @@ join = os.path.join
 strftime = datetime.datetime.strftime
 strptime = datetime.datetime.strptime
 
-RADAR_TAG = "cag01est2400"
 FMT = "%Y-%m-%dT%H:%M:%S"
 MODELS = frozenset(("bolam", "moloch"))
 
