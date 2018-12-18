@@ -147,7 +147,11 @@ def main(args):
     xpos, ypos = ga.xpos(), ga.ypos()
     lat_, lon_ = utils.get_lat_lon(ga.sr, xpos, ypos)
     dt_path_pairs = utils.get_images(args.img_dir)
-    for event in utils.events(dt_path_pairs, min_len=args.min_len):
+    if args.all:
+        gen_events = (_ for _ in [dt_path_pairs])
+    else:
+        gen_events = utils.events(dt_path_pairs, min_len=args.min_len)
+    for event in gen_events:
         groups = None
         if args.resolution:
             groups = [(dt, list(g)) for dt, g in utils.group_images(
@@ -182,6 +186,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("img_dir", metavar="PNG_IMG_DIR")
     parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
+    parser.add_argument("-a", "--all", action="store_true",
+                        help="single event, include all images (ignores -l)")
     parser.add_argument("-l", "--min-len", metavar="N_SECONDS", type=int,
                         default=utils.MIN_EVENT_LEN,
                         help="skip events shorter than N_SECONDS")
