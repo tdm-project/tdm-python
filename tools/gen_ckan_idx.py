@@ -1,107 +1,175 @@
 """\
 Generate JSON resource index files for CKAN import.
-
-For now, this is just a quick hack with no CLI. Read it carefully and change
-top references as needed (e.g., FS_ROOT, URL_ROOT).
 """
 
-from pathlib import Path
-from urllib.parse import urljoin
+from glob import glob
+from string import Template
+import argparse
+import datetime
 import io
 import json
 import os
+import re
+import sys
 
-FS_ROOT = "/data"
-URL_ROOT = "https://foo.bar.it"
-EVENTS_RPATH = "tdm/datasets/radar/events"
-GEOTIFF_RPATH = "tdm/odata/product/radar/cag01est2400"
-OUT_DIR = os.path.join(str(Path.home()), "ckan_upload")
+join = os.path.join
+strptime = datetime.datetime.strptime
 
-RESOURCE_DESC_HEAD = (
-    "Rainfall rate in mm/h from radar cag01est2400. Area: "
-    "lon:8.751948:9.466604, lat:38.951127:39.505794"
-)
-RESOLUTION_DESC = {
-    "high_res": "One set of values per minute",
-    "low_res": "Average values over 1h windows",
+ID_MAP = {
+    "meteosim": ("bolam", "moloch"),
+    "radar": ("cag01est2400",),
 }
-RESOLUTION_NAME = {
-    "high_res": "High resolution",
-    "low_res": "Low resolution",
-}
+DS_RPATH = Template(join("tdm", "datasets", "${source}", "events"))
+RA_RPATH = Template(join("tdm", "odata", "product", "${source}", "${id}"))
 
 
-def main():
-    events_dir = os.path.join(FS_ROOT, EVENTS_RPATH)
-    geotiffs_dir = os.path.join(FS_ROOT, GEOTIFF_RPATH)
-    for event in os.listdir(events_dir):
-        ev_dir = os.path.join(events_dir, event)
-        if not os.path.isdir(ev_dir):
+def get_stubs(stubs_dir):
+    rval = {}
+    for entry in os.scandir(stubs_dir):
+        if entry.is_dir():
             continue
-        geo_dir = os.path.join(geotiffs_dir, event)
-        assert os.path.isdir(geo_dir)
-        desc = {
-            "package": {
-                "name": f"radar_{event}",
-                "title": f"Radar rainfall {event}",
-                "owner_org": "tdm",
-                "license_id": "cc-by",
-                "groups": [
-                    "meteo"
-                ],
-                "tags": [
-                    "radar",
-                    "rainfall"
-                ],
-                "notes": f"Radar rainfall dataset for weather event {event}",
-            },
-        }
-        resources = []
-        print(f"event: {event}")
-        print("  netcdf:")
-        for restype in os.listdir(ev_dir):
-            res_dir = os.path.join(ev_dir, restype)
-            if not os.path.isdir(res_dir):
-                continue
-            print("    resource: %r" % (restype,))
-            res_desc = (
-                f"{RESOURCE_DESC_HEAD}. {RESOLUTION_DESC[restype]}. "
-                "Format: NetCDF. Projection: EPSG:3003."
-            )
-            for name in os.listdir(res_dir):
-                url = urljoin(URL_ROOT, os.path.join(
-                    EVENTS_RPATH, event, restype, name)
-                )
-                resources.append({
-                    "url": url,
-                    "name": f"{RESOLUTION_NAME[restype]} Rainfall NetCDF",
-                    "format": "netcdf",
-                    "description": res_desc,
-                })
-        print("  geotiff:")
-        for restype in os.listdir(geo_dir):
-            res_dir = os.path.join(geo_dir, restype)
-            if not os.path.isdir(res_dir):
-                continue
-            print("    resource: %r" % (restype,))
-            res_desc = (
-                f"{RESOURCE_DESC_HEAD}. {RESOLUTION_DESC[restype]}. "
-                "Format: GeoTIFF. Projection: EPSG:4326."
-            )
-            url = urljoin(URL_ROOT, os.path.join(
-                GEOTIFF_RPATH, event, restype, "description.json")
-            )
-            resources.append({
-                "url": url,
-                "name": f"{RESOLUTION_NAME[restype]} Rainfall GeoTIFF",
-                "format": "json",
-                "description": res_desc,
-            })
-        desc["resources"] = resources
-        out_path = os.path.join(OUT_DIR, f"ckan_upload_{event}.json")
-        with io.open(out_path, "wt") as f:
+        date, ext = os.path.splitext(entry.name)
+        if ext.lower() != ".json":
+            continue
+        rval[date] = entry.path
+    return rval
+
+
+def map_events(stubs, fs_root):
+    m = {date: {"stub": json_path} for date, json_path in stubs.items()}
+    for source, id_list in ID_MAP.items():
+        ds_rpath = DS_RPATH.substitute(source=source)
+        for entry in os.scandir(join(fs_root, ds_rpath)):
+            if entry.name in m:
+                m[entry.name].setdefault("ds", {})[source] = entry.path
+        for id in id_list:
+            ra_rpath = RA_RPATH.substitute(source=source, id=id)
+            for entry in os.scandir(join(fs_root, ra_rpath)):
+                if source == "radar":
+                    date = entry.name
+                else:
+                    name = entry.name.rsplit("_", 1)[-1]
+                    date_obj = strptime(name, "%Y%m%d%H").date()
+                    date = datetime.date.strftime(date_obj, "%Y-%m-%d")
+                ra_map = m[date].setdefault("ra", {})
+                ra_map.setdefault(source, {})[id] = entry.path
+    return m
+
+
+def dump_event_map(m):
+    for date, event in m.items():
+        print(f"  date: {date}")
+        print(f"    stub: {event['stub']}")
+        for cat in "ds", "ra":
+            print(f"    {cat}:")
+            for src, subm in event[cat].items():
+                if cat == "ds":
+                    print(f"      {src}: {subm}")
+                else:
+                    print(f"      {src}:")
+                    for id, path in subm.items():
+                        print(f"        {id}: {path}")
+
+
+def main(args):
+    with io.open(args.desc_map, "rt", encoding="utf-8") as f:
+        desc_map = json.load(f)
+    try:
+        os.makedirs(args.out_dir)
+    except FileExistsError:
+        pass
+    stubs = get_stubs(args.stubs_dir)
+    event_map = map_events(stubs, args.in_dir)
+    print(f"{len(event_map)} events found")
+    dump_event_map(event_map)
+
+    for date, event in event_map.items():
+        with io.open(event["stub"], "rt") as f:
+            desc = json.load(f)
+        resources = desc["resources"]
+
+        # handle datasets
+        for src, event_path in event["ds"].items():
+            for proc_id in os.scandir(event_path):
+                if src == "radar":
+                    for ds in os.scandir(proc_id.path):
+                        url = re.sub(f"^{args.in_dir}", args.base_url, ds.path)
+                        resources.append({
+                            "url": url,
+                            "name": ds.name,
+                            "format": "netcdf",
+                            "description": " - ".join([
+                                desc_map[src],
+                                desc_map[proc_id.name]
+                            ])
+                        })
+                else:
+                    for proj in os.scandir(proc_id.path):
+                        for ds in os.scandir(proj.path):
+                            url = re.sub(
+                                f"^{args.in_dir}", args.base_url, ds.path
+                            )
+                            resources.append({
+                                "url": url,
+                                "name": ds.name,
+                                "format": "netcdf",
+                                "description": " - ".join([
+                                    desc_map[src],
+                                    desc_map[proc_id.name],
+                                    desc_map[proj.name],
+                                ])
+                            })
+
+        # handle "random" access
+        for src, res_map in event["ra"].items():
+            if src == "meteosim":
+                for proc_id, path in res_map.items():
+                    desc_path = glob(f"{path}/*/description.json")[0]
+                    url = re.sub(
+                        f"^{args.in_dir}", args.base_url, desc_path
+                    )
+                    resources.append({
+                        "url": url,
+                        "name": "description.json",
+                        "format": "json",
+                        "description": " - ".join([
+                            desc_map[src],
+                            desc_map[proc_id],
+                            "lat-lon geotiff",
+                        ])
+                    })
+            else:
+                path = [_ for _ in res_map.values()][0]
+                for entry in os.scandir(path):
+                    desc_path = join(entry.path, "description.json")
+                    url = re.sub(
+                        f"^{args.in_dir}", args.base_url, desc_path
+                    )
+                    resources.append({
+                        "url": url,
+                        "name": "description.json",
+                        "format": "json",
+                        "description": " - ".join([
+                            desc_map[src],
+                            desc_map[entry.name],
+                            "lat-lon geotiff",
+                        ])
+                    })
+
+        out_path = join(args.out_dir, os.path.basename(event["stub"]))
+        with io.open(out_path, "wt", encoding="utf-8") as f:
             f.write(json.dumps(desc, indent=4, sort_keys=False))
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("stubs_dir", metavar="STUBS_DIR",
+                        help="dir containing the top-level JSON stubs")
+    parser.add_argument("desc_map", metavar="DESC_MAP_JSON",
+                        help="JSON resource description map")
+    parser.add_argument("base_url", metavar="BASE_URL")
+    parser.add_argument("-i", "--in-dir", metavar="DIR", default=os.getcwd())
+    parser.add_argument("-o", "--out-dir", metavar="DIR",
+                        default=join(os.getcwd(), "ckan_upload"))
+    parser.add_argument("--overwrite", action="store_true")
+    main(parser.parse_args(sys.argv[1:]))
