@@ -1,0 +1,16 @@
+{
+    "package": {
+        "name": "2018-07-30",
+        "title": "Heat wave - July 30, 2018",
+        "owner_org": "tdm",
+        "license_id": "cc-by",
+        "groups": [
+            "meteo"
+        ],
+        "tags": [
+            "meteosim"
+        ],
+        "notes": "# July 30, 2018 - Heat wave.\n\nParagraph1.\n\nParagraph2."
+    },
+    "resources": []
+}
