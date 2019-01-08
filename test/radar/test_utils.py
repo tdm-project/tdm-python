@@ -190,9 +190,17 @@ class TestSave(unittest.TestCase):
         self.assertTrue(np.array_equal(ma.mask, rain.mask))
         self.assertTrue(np.ma.allclose(ma, rain))
         self.assertEqual(dataset.GetGeoTransform(),
-                         (ga.oX, ga.pxlW, 0, ga.oY, 0, ga.pxlH))
+                         (ga.origin[0], ga.M[0][0], ga.M[0][1],
+                          ga.origin[1], ga.M[1][0], ga.M[1][1]))
         sr = gdal.osr.SpatialReference(wkt=dataset.GetProjectionRef())
         self.assertTrue(sr.IsSame(ga.sr))
+        M = np.array(ga.M)
+        ga.rotate_wrt_center(0.5 * np.pi)
+        # Assume geotiff aligned with axes.
+        self.assertAlmostEqual(ga.M[0][0], 0)
+        self.assertAlmostEqual(ga.M[0][1], M[0][0])        
+        self.assertAlmostEqual(ga.M[1][0], -M[1][1])
+        self.assertAlmostEqual(ga.M[1][1], 0)
         # check band_to_ma
         ma2 = utils.band_to_ma(band)
         self.assertTrue(np.array_equal(ma2.mask, ma.mask))

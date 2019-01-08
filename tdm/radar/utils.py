@@ -33,16 +33,16 @@ class GeoAdapter(object):
 
     def __init__(self, template):
         self.raster = gdal.Open(template)
-        oX, pxlW, _1, oY, _2, pxlH = self.raster.GetGeoTransform()
-        # we only deal with rectangular, axis-aligned images
-        if _1 or _2:
-            raise RuntimeError("%s: unsupported transform")
+        oX, m00, m01, oY, m10, m11 = self.raster.GetGeoTransform()
         self.wkt = self.raster.GetProjectionRef()
         self.sr = osr.SpatialReference(wkt=self.wkt)
         factor = self.sr.GetLinearUnits()  # mult factor to get meters
         self.cols, self.rows = self.raster.RasterXSize, self.raster.RasterYSize
-        self.oX, self.oY = oX, oY
-        self.pxlW, self.pxlH = factor * pxlW, factor * pxlH
+        self.origin = np.array([oX, oY])
+        self.M = factor * np.array([[m00, m01], [m10, m11]])
+        semidiag = 0.5 * ((self.cols - 1) * self.M[0] +
+                          (self.rows - 1) * self.M[1])
+        self.center = self.origin + semidiag
 
     def save_as_gtiff(self, fname, data, metadata=None):
         raster = gdal.GetDriverByName('GTiff').Create(
@@ -55,22 +55,31 @@ class GeoAdapter(object):
         else:
             band.WriteArray(data)
         band.FlushCache()
-        raster.SetGeoTransform((self.oX, self.pxlW, 0, self.oY, 0, self.pxlH))
+        raster.SetGeoTransform((self.origin[0], self.M[0][0], self.M[0][1],
+                                self.origin[1], self.M[1][0], self.M[1][1]))
         raster.SetProjection(self.wkt)
         if isinstance(metadata, dict):
             raster.SetMetadata(metadata)
 
+    def rotate_wrt_center(self, angle):
+        rot = np.array([[np.cos(angle), -np.sin(angle)],
+                        [np.sin(angle), np.cos(angle)]])
+        self.M = rot.dot(self.M)
+        self.origin = self.center + rot.dot(self.origin - self.center)
+        self.rot = rot
+
     def compute_distance_field(self):
+        raise RuntimeError('compute_distance_field not supported')
         x = self.pxlW * (np.arange(-(self.cols/2), (self.cols/2), 1) + 0.5)
         y = self.pxlH * (np.arange(-(self.rows/2), (self.rows/2), 1) + 0.5)
         xx, yy = np.meshgrid(x, y, sparse=True)
         return 10 * np.log(xx**2 + yy**2)
 
     def xpos(self):
-        return self.oX + self.pxlW * np.arange(self.cols)
+        raise RuntimeError('xpos not supported')
 
     def ypos(self):
-        return self.oY + self.pxlH * np.arange(self.rows)
+        raise RuntimeError('ypos not supported')
 
 
 def get_images(root, after=MIN_DT, before=MAX_DT):
