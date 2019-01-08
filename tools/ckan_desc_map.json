@@ -1,10 +1,22 @@
 {
-    "meteosim": "weather forecast simulation",
-    "bolam": "BOLAM model",
-    "moloch": "MOLOCH model",
-    "netcdf": "rotated pole coordinates",
-    "netcdf-lonlat": "lat-lon coordinates",
-    "radar": "radar rainfall",
-    "1m": "one set of values per minute",
-    "1h": "average values over 1h windows"
+    "short": {
+	"meteosim": "simulation",
+	"bolam": "bolam",
+	"moloch": "moloch",
+	"netcdf": "rotatedpole",
+	"netcdf-lonlat": "latlon",
+	"radar": "radar",
+	"1m": "1m",
+	"1h": "1h"
+    },
+    "long": {
+	"meteosim": "weather forecast simulation",
+	"bolam": "BOLAM model",
+	"moloch": "MOLOCH model",
+	"netcdf": "rotated pole coordinates",
+	"netcdf-lonlat": "lat-lon coordinates",
+	"radar": "radar rainfall",
+	"1m": "one set of values per minute",
+	"1h": "average values over 1h windows"
+    }
 }

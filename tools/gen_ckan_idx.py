@@ -73,7 +73,8 @@ def dump_event_map(m):
 
 def main(args):
     with io.open(args.desc_map, "rt", encoding="utf-8") as f:
-        desc_map = json.load(f)
+        temp = json.load(f)
+        short_desc_map, desc_map = temp["short"], temp["long"]
     try:
         os.makedirs(args.out_dir)
     except FileExistsError:
@@ -96,7 +97,11 @@ def main(args):
                         url = re.sub(f"^{args.in_dir}", args.base_url, ds.path)
                         resources.append({
                             "url": url,
-                            "name": ds.name,
+                            "name": "_".join([
+                                "bulk",
+                                short_desc_map[src],
+                                short_desc_map[proc_id.name]
+                            ]),
                             "format": "netcdf",
                             "description": " - ".join([
                                 desc_map[src],
@@ -111,7 +116,12 @@ def main(args):
                             )
                             resources.append({
                                 "url": url,
-                                "name": ds.name,
+                                "name": "_".join([
+                                    "bulk",
+                                    short_desc_map[src],
+                                    short_desc_map[proc_id.name],
+                                    short_desc_map[proj.name],
+                                ]),
                                 "format": "netcdf",
                                 "description": " - ".join([
                                     desc_map[src],
@@ -130,7 +140,12 @@ def main(args):
                     )
                     resources.append({
                         "url": url,
-                        "name": "description.json",
+                        "name": "_".join([
+                            "ra",
+                            short_desc_map[src],
+                            short_desc_map[proc_id],
+                            "latlon",
+                        ]),
                         "format": "json",
                         "description": " - ".join([
                             desc_map[src],
@@ -147,7 +162,12 @@ def main(args):
                     )
                     resources.append({
                         "url": url,
-                        "name": "description.json",
+                        "name": "_".join([
+                            "ra",
+                            short_desc_map[src],
+                            short_desc_map[entry.name],
+                            "latlon",
+                        ]),
                         "format": "json",
                         "description": " - ".join([
                             desc_map[src],
