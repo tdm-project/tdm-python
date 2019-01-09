@@ -36,6 +36,8 @@ def main(args):
         if ((i + 1) % 10 == 0):
             print(f"  {i + 1}/{len(paths)}")
         out_p = os.path.join(args.out_dir, os.path.basename(p))
+        if args.verbose:
+            print(f"    writing {out_p}")
         data = imread(p)
         r_data = rotate(data, args.angle, reshape=False, cval=CVAL)
         imwrite(out_p, r_data, optimize=args.optimize)
@@ -48,4 +50,5 @@ if __name__ == "__main__":
     parser.add_argument("-a", "--angle", metavar="DEGREES", default=ANGLE)
     parser.add_argument("-o", "--optimize", action="store_true",
                         help="minimize output file size")
+    parser.add_argument("-v", "--verbose", action="store_true")
     main(parser.parse_args(sys.argv[1:]))
