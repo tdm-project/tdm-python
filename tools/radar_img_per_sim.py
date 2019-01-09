@@ -67,7 +67,8 @@ def main(args):
             pass
         pairs = utils.get_images(args.radar_dir, after=start, before=stop)
         for dt, src in pairs:
-            dst = join(out_subd, strftime(dt, utils.FMT))
+            out_name = "%s.png" % strftime(dt, utils.FMT)
+            dst = join(out_subd, out_name)
             with open(src, "rb") as fi, open(dst, "wb") as fo:
                 fo.write(fi.read())
         print()
