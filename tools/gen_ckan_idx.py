@@ -191,5 +191,4 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--in-dir", metavar="DIR", default=os.getcwd())
     parser.add_argument("-o", "--out-dir", metavar="DIR",
                         default=join(os.getcwd(), "ckan_upload"))
-    parser.add_argument("--overwrite", action="store_true")
     main(parser.parse_args(sys.argv[1:]))
