@@ -84,15 +84,17 @@ def get_images(root, after=MIN_DT, before=MAX_DT):
     that. Returns (datetime, path) pairs, ignoring names that do not match.
     """
     ls = []
-    for bn in os.listdir(root):
-        dt_string = splitext(bn)[0][-FMT_LEN:]
+    for entry in os.scandir(root):
+        if entry.is_dir():
+            continue
+        dt_string = splitext(entry.name)[0][-FMT_LEN:]
         try:
             dt = strptime(dt_string, FMT)
         except ValueError:
             continue
         if dt < after or dt > before:
             continue
-        ls.append((dt, os.path.join(root, bn)))
+        ls.append((dt, entry.path))
     ls.sort()
     return ls
 
