@@ -1,0 +1,22 @@
+{
+    "short": {
+	"meteosim": "simulation",
+	"bolam": "bolam",
+	"moloch": "moloch",
+	"netcdf": "rotatedpole",
+	"netcdf-lonlat": "latlon",
+	"radar": "radar",
+	"1m": "1m",
+	"1h": "1h"
+    },
+    "long": {
+	"meteosim": "simulazione meteo",
+	"bolam": "modello BOLAM",
+	"moloch": "modello MOLOCH",
+	"netcdf": "coordinate rotated pole",
+	"netcdf-lonlat": "coordinate lat-lon",
+	"radar": "intensita' piovosa, radar Cagliari",
+	"1m": "valori al minuto",
+	"1h": "valori mediati su intervalli di 1h"
+    }
+}
