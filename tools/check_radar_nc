@@ -17,20 +17,6 @@ strptime = datetime.datetime.strptime
 strftime = datetime.datetime.strftime
 
 
-# For a double check, here we use the old versions of get_image_data and
-# estimate_rainfall (no masked arrays). Note that the mask used here is
-# negated w.r.t that of the new version.
-
-def get_image_data(path):
-    im = imageio.imread(path)
-    return im[:, :, 0], im[:, :, 3] == 255  # signal, mask
-
-
-def estimate_rainfall(signal, mask):
-    Z = 10**(0.1*(0.39216 * signal - 8.6))
-    return (Z/300)**(1/1.5) * mask
-
-
 def run_gdaltransform(s_srs, t_srs, x, y):
     args = ["gdaltransform", "-s_srs", s_srs, "-t_srs", t_srs, "-output_xy"]
     out = subprocess.check_output(args, input=b"%f %f\n" % (x, y))
@@ -81,8 +67,8 @@ def check_rainfall_rate(dataset, dts, img_dir):
     rr = dataset.variables["rainfall_rate"]
     for i, dt in enumerate(dts):
         name = "%s.png" % strftime(dt, "%Y-%m-%d_%H:%M:%S")
-        signal, mask = get_image_data(os.path.join(img_dir, name))
-        rainfall = estimate_rainfall(signal, mask)
+        signal = utils.get_image_data(os.path.join(img_dir, name))
+        rainfall = utils.estimate_rainfall(signal)
         assert np.ma.allclose(rr[i], rainfall, atol=1e-4)
 
 

@@ -28,6 +28,10 @@ MIN_EVENT_LEN = 24 * 60 * 60
 
 RAINFALL_FILL_VALUE = -1.0
 
+# a and b empirical parameters for Z = a * R ^ b (reflectivity vs rain
+# intensity). These values are the recommended ones for cag01est2400
+A_PARAM, B_PARAM = 100, 1.5
+
 
 class GeoAdapter(object):
 
@@ -120,10 +124,9 @@ def get_image_data(path):
     return signal
 
 
-def estimate_rainfall(masked_signal):
-    "This is specific to XXX radar signal"
+def estimate_rainfall(masked_signal, a=A_PARAM, b=B_PARAM):
     Z = 10**(0.1*(0.39216 * masked_signal - 8.6))
-    rf = (Z/300)**(1/1.5)
+    rf = (Z/a)**(1/b)
     rf.set_fill_value(RAINFALL_FILL_VALUE)
     return rf
 
