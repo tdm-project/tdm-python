@@ -49,8 +49,8 @@ class MemMasterBuilder(object):
 
     # NOTE: it is coordinated with the permutation that we impose in build()
     def get_geotransform(self, lons, lats):
-        return (lons[0], (lons[-1] - lons[0])/(len(lons) - 1), 0,
-                lats[-1], 0, -(lats[-1] - lats[0])/(len(lats) - 1))
+        return (lons[0], (lons[-1] - lons[0])/len(lons), 0,
+                lats[-1], 0, -(lats[-1] - lats[0])/len(lats))
 
     def setup_raster(self, data):
         rows, cols = data[0].shape
