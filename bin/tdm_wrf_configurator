@@ -6,7 +6,7 @@ import yaml
 from tdm.wrf import configurator
 from tdm.wrf import summarizer
 from tdm.wrf import configuration_checker
-from tdm import VERSION as version
+from tdm import __version__ as version
 
 
 from datetime import datetime
@@ -68,9 +68,6 @@ def make_parser():
         description="Prepare WRF configuration files",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument('-V', '--version', action='version',
-                        version=version,
-                        help='Print version number and exit')
     parser.add_argument("--summarize", action="store_true",
                         help="Summarize configuration info and exit")
     parser.add_argument('--target', metavar="|".join(SUPPORTED_TARGETS),

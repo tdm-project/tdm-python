@@ -12,8 +12,11 @@ dirs=(
     "wrf"
 )
 
+pushd "${this_dir}"
+python test_top_level.py
 for d in ${dirs[@]}; do
-    pushd "${this_dir}/${d}"
+    pushd "${d}"
     ./run
     popd
 done
+popd
