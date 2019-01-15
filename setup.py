@@ -38,10 +38,10 @@ setup(
         '<simone.leo@crs4.it>',
         '<gianluigi.zanetti@crs4.it>',
     )),
-    license='MIT',
+    license='Apache-2.0',
     classifiers=[
         'Programming Language :: Python :: 3.6',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache Software License',
         'Operating System :: POSIX :: Linux',
         'Topic :: Scientific/Engineering :: Atmospheric Science',
         'Intended Audience :: Science/Research',
