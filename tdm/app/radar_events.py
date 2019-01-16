@@ -18,10 +18,8 @@
 Split raw radar images into per-event directories.
 """
 
-import argparse
 import datetime
 import os
-import sys
 
 from tdm.radar import utils
 
@@ -48,11 +46,11 @@ def main(args):
                 fo.write(fi.read())
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+def add_parser(subparsers):
+    parser = subparsers.add_parser("radar_events", description=__doc__)
     parser.add_argument("in_dir", metavar="INPUT_DIR")
     parser.add_argument("-l", "--min-len", metavar="N_SECONDS", type=int,
                         default=utils.MIN_EVENT_LEN,
                         help="skip events shorter than N_SECONDS")
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
-    main(parser.parse_args(sys.argv[1:]))
+    parser.set_defaults(func=main)

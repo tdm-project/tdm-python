@@ -14,19 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import xarray as xr
-import json
-import gdal
-import osr
-
 from datetime import datetime
 from urllib.parse import urljoin
-
-import argparse
-import os
-import sys
 import io
+import json
+import os
 
+import gdal
+import osr
+import xarray as xr
+
+from tdm import __version__ as version
 
 gdal.UseExceptions()
 
@@ -118,7 +116,7 @@ def get_simulation_details(args, dataset):
         'name': pname,
         'uid': puid,
         'path': args.nc_path,
-        'history': ['Extracted by tdm_map_to_tree (V0.0)'],
+        'history': [f'Extracted by tdm map_to_tree {version}'],
         'start_time': to_datetime(times[0]),
         'end_time': to_datetime(times[-1]),
         'lon_range': to_coord_range(lons),
@@ -171,8 +169,8 @@ def main(args):
     dump_to_tree(args.out_dir, dataset, simulation_details, args.url_root)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+def add_parser(subparsers):
+    parser = subparsers.add_parser("map_to_tree")
     parser.add_argument("nc_path", metavar="NETCDF_FILE")
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
     parser.add_argument("--product-group", metavar="PRODUCT_GROUP",
@@ -184,5 +182,4 @@ if __name__ == "__main__":
     parser.add_argument("--url-root", metavar="URL_ROOT",
                         help="the url root of the data tree",
                         default="https://rest.tdm-project.it")
-
-    main(parser.parse_args(sys.argv[1:]))
+    parser.set_defaults(func=main)

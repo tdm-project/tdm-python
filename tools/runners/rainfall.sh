@@ -16,7 +16,7 @@ find "${in_dir}" -mindepth 1 -maxdepth 1 -type d > "${lst}"
 parallel -a "${lst}" -j32 --progress --joblog "${log}" --results "${rd}" \
   docker run --rm \
     -v /data/radar_data:/data/radar_data:ro -v "${out_dir}":/out_dir \
-    crs4/tdm-tools tdm_rainfall {} "${footprint}" \
+    crs4/tdm-tools tdm rainfall {} "${footprint}" \
     -o /out_dir --t-chunks 120 -r 3600\;
 
 echo "work dir was: ${wd}"

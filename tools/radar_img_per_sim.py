@@ -15,7 +15,7 @@
 """\
 Select radar images in the time range of each meteo sim.
 
-Works on NetCDF datasets created with tdm_grib2cf.
+Works on NetCDF datasets created with tdm grib2cf.
 """
 import datetime
 import argparse

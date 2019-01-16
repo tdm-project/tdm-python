@@ -20,7 +20,6 @@ NetCDF Climate and Forecast (CF) Metadata Conventions
 (http://cfconventions.org) Version 1.6.
 """
 
-import argparse
 import os
 import sys
 import cdo
@@ -28,6 +27,7 @@ import subprocess
 import shutil
 import tempfile
 import uuid
+
 
 def get_files(files_dir, ext):
     files = []
@@ -81,8 +81,8 @@ def main(args):
     # annotate(out_fn, annotations)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+def add_parser(subparsers):
+    parser = subparsers.add_parser("grib2cf", description=__doc__)
     parser.add_argument('-i', '--input', metavar="DIR", default=".")
     parser.add_argument('-o', '--output', metavar="DIR", default=".")
     parser.add_argument("--product-group", metavar="PRODUCT_GROUP",
@@ -92,4 +92,4 @@ if __name__ == "__main__":
     parser.add_argument('--name', metavar="STRING")
     parser.add_argument("--instance-uid", metavar="UID",
                         help="an unique identifier for this dataset")
-    main(parser.parse_args(sys.argv[1:]))
+    parser.set_defaults(func=main)

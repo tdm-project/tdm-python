@@ -21,10 +21,8 @@ datasets, using the NetCDF Climate and Forecast (CF) Metadata Conventions
 """
 
 from netCDF4 import Dataset
-import argparse
 import datetime
 import os
-import sys
 
 import numpy as np
 
@@ -196,8 +194,8 @@ def main(args):
         ds.close()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
+def add_parser(subparsers):
+    parser = subparsers.add_parser("rainfall", description=__doc__)
     parser.add_argument("img_dir", metavar="PNG_IMG_DIR")
     parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
     parser.add_argument("-a", "--all", action="store_true",
@@ -210,4 +208,4 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
     parser.add_argument("--t-chunks", metavar="N", type=int, default=T_CHUNKS,
                         help="chunk size along the t dimension")
-    main(parser.parse_args(sys.argv[1:]))
+    parser.set_defaults(func=main)

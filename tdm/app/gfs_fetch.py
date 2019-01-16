@@ -14,19 +14,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import os
+"""\
+Fetch GFS files from a remote production service.
+"""
+
 import argparse
+import os
+from datetime import datetime
+
 from tdm.gfs.noaa import noaa_fetcher
 
-from datetime import datetime
 
 NOW = datetime.now()
 
 
-def make_parser():
-    parser = argparse.ArgumentParser(
-        description="Fetch GFS files from a remote production service",
+def main(args):
+    nf = noaa_fetcher(args.year, args.month, args.day, args.hour)
+    os.mkdir(args.target_directory)
+    nf.fetch(args.requested_resolution, args.target_directory,
+             nthreads=args.n_download_threads)
+    with open(args.semaphore_file, "w") as f:
+        f.close()
+
+
+def add_parser(subparsers):
+    parser = subparsers.add_parser(
+        "gfs_fetch",
+        description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -69,18 +83,4 @@ def make_parser():
         type=str, default='0p50',
         help="Requested resolution in fraction of degree. Defaults to '0p50'"
     )
-    return parser
-
-
-def main(argv):
-    parser = make_parser()
-    args, unknown = parser.parse_known_args(argv)
-    nf = noaa_fetcher(args.year, args.month, args.day, args.hour)
-    os.mkdir(args.target_directory)
-    nf.fetch(args.requested_resolution, args.target_directory,
-             nthreads=args.n_download_threads)
-    with open(args.semaphore_file, "w") as f:
-        f.close()
-
-
-main(sys.argv)
+    parser.set_defaults(func=main)
