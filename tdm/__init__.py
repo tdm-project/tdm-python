@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-    from tdm.version import VERSION as __version__
-except ImportError:
-    __version__ = None
+from tdm.version import VERSION
+
+__version__ = VERSION
