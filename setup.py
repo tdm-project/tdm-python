@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""\
+Software tools for the TDM Project (http://www.tdm-project.it/en).
+"""
+
 from setuptools import setup
 from tdm.version import VERSION
 
@@ -20,6 +24,7 @@ setup(
     version=VERSION,
     url='https://github.com/tdm-project/tdm-tools',
     description='TDM Tools - http://www.tdm-project.it/en/',
+    long_description=__doc__,
     author=', '.join((
         'Simone Leo',
         'Gianluigi Zanetti',
@@ -29,6 +34,7 @@ setup(
         '<gianluigi.zanetti@crs4.it>',
     )),
     license='Apache-2.0',
+    platforms=['Linux'],
     classifiers=[
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: Apache Software License',
