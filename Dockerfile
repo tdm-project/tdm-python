@@ -1,4 +1,4 @@
-FROM crs4/tdm-base:latest
+FROM tdmproject/tdm-base:latest
 MAINTAINER simone.leo@crs4.it
 
 RUN pip install --no-cache-dir \

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+echo "${TDM_PASS}" | docker login -u "${TDM_USER}" --password-stdin
+docker push tdmproject/tdm-tools

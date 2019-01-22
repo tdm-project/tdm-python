@@ -16,5 +16,16 @@ install: true
 before_script: flake8 -v .
 
 script:
- - docker build -t crs4/tdm-tools .
- - docker run --rm crs4/tdm-tools bash -c "test/run"
+ - docker build -t tdmproject/tdm-tools .
+ - docker run --rm tdmproject/tdm-tools bash -c "test/run"
+
+deploy:
+  - provider: script
+    script: ./docker_push
+    on:
+      branch: develop
+  - provider: pypi
+    user: "${TDM_USER}"
+    password: "${TDM_PASS}"
+    on:
+      tags: true
