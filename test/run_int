@@ -5,12 +5,11 @@ set -euo pipefail
 this="${BASH_SOURCE-$0}"
 this_dir=$(cd -P -- "$(dirname -- "${this}")" && pwd -P)
 
-tests=(
-    "noaa_fetcher"
+dirs=(
+    "radar"
+    "sim"
 )
 
-pushd "${this_dir}"
-for t in ${tests[@]}; do
-    python test_${t}.py
+for d in ${dirs[@]}; do
+    "${this_dir}/${d}"/scripts/run
 done
-popd

@@ -5,18 +5,5 @@ set -euo pipefail
 this="${BASH_SOURCE-$0}"
 this_dir=$(cd -P -- "$(dirname -- "${this}")" && pwd -P)
 
-dirs=(
-    "gfs"
-    "radar"
-    "sim"
-    "wrf"
-)
-
-pushd "${this_dir}"
-python test_top_level.py
-for d in ${dirs[@]}; do
-    pushd "${d}"
-    ./run
-    popd
-done
-popd
+"${this_dir}"/run_unit
+"${this_dir}"/run_int
