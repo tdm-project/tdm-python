@@ -12,9 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import unittest
 import yaml
+
 from tdm.wrf import configurator, configuration_checker
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def flatten_flat(assigned):
@@ -41,15 +45,15 @@ def flatten_domains(assigned):
     return f
 
 
-class test_configurator(unittest.TestCase):
+class TestConfigurator(unittest.TestCase):
 
     def setUp(self):
-        with open('minimal.yaml') as f:
+        with open(os.path.join(THIS_DIR, 'minimal.yaml')) as f:
             assigned = yaml.load(f.read())
         self.assigned = assigned
         self.c = configurator.make(assigned)
 
-    def check_minimal(self):
+    def test_minimal(self):
         c = self.c
         assigned = self.assigned
         for i, d in enumerate(c.domains_sequence):
@@ -66,7 +70,7 @@ class test_configurator(unittest.TestCase):
         for k, v in test_vals.items():
             self.assertEqual(v, c[k])
 
-    def check_update(self):
+    def test_update(self):
         c = self.c
         updates = [('@base.geometry.e_we', 131),
                    ('@dom1.geometry.e_we', 202),
@@ -85,7 +89,7 @@ class test_configurator(unittest.TestCase):
             else:
                 self.assertEqual(c[kd], v)
 
-    def check_time_step(self):
+    def test_time_step(self):
         c = self.c
         v = 44.1902
         iv, iv_f_n, iv_f_d = 44, 951, 5000
@@ -100,7 +104,7 @@ class test_configurator(unittest.TestCase):
         self.assertEqual(c['global.running.time_step_fract_num'], iv_f_n)
         self.assertEqual(c['global.running.time_step_fract_den'], iv_f_d)
 
-    def check_checker(self):
+    def test_checker(self):
         c = self.c
         cc = configuration_checker(c)
         self.assertTrue(cc.check())
@@ -110,7 +114,7 @@ class test_configurator(unittest.TestCase):
         cc = configuration_checker(c)
         self.assertFalse(cc.check())
 
-    def check_generation(self):
+    def test_generation(self):
         c = self.c
         c.generate_share()
         c.generate_geogrid()
@@ -125,7 +129,7 @@ class test_configurator(unittest.TestCase):
         c.generate_grib2()
         c.generate_namelist_quilt()
 
-    def check_domains(self):
+    def test_domains(self):
         c = self.c
         for dn, dv in c.domains.items():
             self.assertEqual(dn, dv.name)
@@ -139,17 +143,5 @@ class test_configurator(unittest.TestCase):
                                (360000.0, 720000.0))
 
 
-def suite():
-    suite_ = unittest.TestSuite()
-    suite_.addTest(test_configurator('check_minimal'))
-    suite_.addTest(test_configurator('check_update'))
-    suite_.addTest(test_configurator('check_time_step'))
-    suite_.addTest(test_configurator('check_generation'))
-    suite_.addTest(test_configurator('check_domains'))
-    suite_.addTest(test_configurator('check_checker'))
-    return suite_
-
-
 if __name__ == '__main__':
-    _RUNNER = unittest.TextTestRunner(verbosity=2)
-    _RUNNER.run((suite()))
+    unittest.main()

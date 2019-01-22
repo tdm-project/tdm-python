@@ -13,15 +13,6 @@
 # limitations under the License.
 
 import unittest
-from tdm.gfs.noaa import noaa_fetcher
 
-
-class TestNOAAFetcher(unittest.TestCase):
-
-    def runTest(self):
-        # TBD
-        self.assertIsNotNone(noaa_fetcher)
-
-
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == '__main__':
+    unittest.main(module=None)

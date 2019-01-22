@@ -1,0 +1,5 @@
+include LICENSE README.md
+
+include test/*.py
+include test/*/*.py
+include test/wrf/minimal.yaml

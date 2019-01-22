@@ -27,6 +27,7 @@ gdal.UseExceptions()
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(THIS_DIR, "data")
 
 
 class TestEvents(unittest.TestCase):
@@ -173,14 +174,15 @@ class TestGetImages(unittest.TestCase):
         self.assertEqual(res, exp_res)
 
 
+@unittest.skipUnless(os.path.isdir(DATA_DIR), "requires sample data")
 class TestSave(unittest.TestCase):
 
     def setUp(self):
         self.wd = tempfile.mkdtemp(prefix="tdm_")
         self.raw_fn = os.path.join(
-            THIS_DIR, "data", "signal", "2018-05-01_23:00:04.png"
+            DATA_DIR, "signal", "2018-05-01_23:00:04.png"
         )
-        self.template = os.path.join(THIS_DIR, "data", "radarfootprint.tif")
+        self.template = os.path.join(DATA_DIR, "radarfootprint.tif")
 
     def tearDown(self):
         shutil.rmtree(self.wd)
@@ -213,20 +215,5 @@ class TestSave(unittest.TestCase):
         self.assertTrue(np.ma.allclose(ma2, ma))
 
 
-CASES = [
-    TestEvents,
-    TestGetImages,
-    TestSave,
-]
-
-
-def suite():
-    ret = unittest.TestSuite()
-    test_loader = unittest.TestLoader()
-    for c in CASES:
-        ret.addTest(test_loader.loadTestsFromTestCase(c))
-    return ret
-
-
 if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run((suite()))
+    unittest.main()
