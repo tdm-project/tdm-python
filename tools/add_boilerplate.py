@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """\
-Add or update Apache 2.0 boilerplate notice to Python files.
+Add or update Apache 2.0 boilerplate notice.
 """
 
 import io
@@ -35,7 +35,8 @@ EXCLUDE_FILE = frozenset((
     ".dockerignore",
     "Dockerfile",
     "LICENSE",
-    "VERSION",
+    "README.md",
+    "version.py",
 ))
 EXCLUDE_EXT = frozenset(("grib2", "png", "rst", "tif", "yml"))
 
@@ -85,12 +86,10 @@ def add_boilerplate(boilerplate, fn):
 
 
 def main():
-    basename, join = os.path.basename, os.path.join
+    join = os.path.join
     bp = get_boilerplate()
     for root, dirs, files in os.walk(TOP_DIR):
         dirs[:] = [_ for _ in dirs if not _.startswith(".")]
-        if basename(root).startswith("."):
-            continue
         for name in files:
             if name in EXCLUDE_FILE:
                 continue
