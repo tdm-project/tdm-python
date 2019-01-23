@@ -1,3 +1,17 @@
+# Copyright 2018-2019 CRS4
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from datetime import datetime, timedelta
 import io
 import os
@@ -13,6 +27,7 @@ gdal.UseExceptions()
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(THIS_DIR, "data")
 
 
 class TestEvents(unittest.TestCase):
@@ -159,14 +174,15 @@ class TestGetImages(unittest.TestCase):
         self.assertEqual(res, exp_res)
 
 
+@unittest.skipUnless(os.path.isdir(DATA_DIR), "requires sample data")
 class TestSave(unittest.TestCase):
 
     def setUp(self):
         self.wd = tempfile.mkdtemp(prefix="tdm_")
         self.raw_fn = os.path.join(
-            THIS_DIR, "data", "signal", "2018-05-01_23:00:04.png"
+            DATA_DIR, "signal", "2018-05-01_23:00:04.png"
         )
-        self.template = os.path.join(THIS_DIR, "data", "radarfootprint.tif")
+        self.template = os.path.join(DATA_DIR, "radarfootprint.tif")
 
     def tearDown(self):
         shutil.rmtree(self.wd)
@@ -199,20 +215,5 @@ class TestSave(unittest.TestCase):
         self.assertTrue(np.ma.allclose(ma2, ma))
 
 
-CASES = [
-    TestEvents,
-    TestGetImages,
-    TestSave,
-]
-
-
-def suite():
-    ret = unittest.TestSuite()
-    test_loader = unittest.TestLoader()
-    for c in CASES:
-        ret.addTest(test_loader.loadTestsFromTestCase(c))
-    return ret
-
-
 if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity=2).run((suite()))
+    unittest.main()

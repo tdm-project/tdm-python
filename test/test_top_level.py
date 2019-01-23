@@ -13,15 +13,27 @@
 # limitations under the License.
 
 import unittest
-from tdm.gfs.noaa import noaa_fetcher
+import tdm
 
 
-class TestNOAAFetcher(unittest.TestCase):
+class TestTDM(unittest.TestCase):
 
-    def runTest(self):
-        # TBD
-        self.assertIsNotNone(noaa_fetcher)
+    def test_version(self):
+        self.assertIsNotNone(tdm.__version__)
 
 
-if __name__ == "__main__":
-    unittest.main()
+CASES = [
+    TestTDM,
+]
+
+
+def suite():
+    ret = unittest.TestSuite()
+    test_loader = unittest.TestLoader()
+    for c in CASES:
+        ret.addTest(test_loader.loadTestsFromTestCase(c))
+    return ret
+
+
+if __name__ == '__main__':
+    unittest.TextTestRunner(verbosity=2).run((suite()))
