@@ -14,7 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
+"""\
+Prepare WRF configuration files
+"""
+
 import argparse
 import yaml
 from tdm.wrf import configurator
@@ -77,26 +80,6 @@ class UpdateMap(argparse.Action):
         getattr(namespace, self.dest).update([values])
 
 
-def make_parser():
-    parser = argparse.ArgumentParser(
-        description="Prepare WRF configuration files",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument("--summarize", action="store_true",
-                        help="Summarize configuration info and exit")
-    parser.add_argument('--target', metavar="|".join(SUPPORTED_TARGETS),
-                        choices=SUPPORTED_TARGETS, default='WPS')
-    parser.add_argument('--config',
-                        type=argparse.FileType('r', encoding='UTF-8'))
-    parser.add_argument('--ofile',
-                        type=argparse.FileType('w', encoding='UTF-8'))
-    parser.add_argument('-D', metavar='K=V', action=UpdateMap,
-                        help='Add/update configuration item.')
-    parser.add_argument('-P', '--print', metavar='K', action='append',
-                        help='Print configuration value for key K.')
-    return parser
-
-
 def generate_header(target):
     now = datetime.utcnow()
     header = """
@@ -126,9 +109,7 @@ def write_wrf(config, ostream):
     ostream.write(config.generate_namelist_quilt())
 
 
-def main(argv):
-    parser = make_parser()
-    args, unknown = parser.parse_known_args(argv)
+def main(args):
     config = configurator.make(yaml.load(args.config.read()))
     if args.D:
         config.update(args.D)
@@ -155,5 +136,22 @@ def main(argv):
         write_wrf(config, args.ofile)
 
 
-if __name__ == "__main__":
-    main(sys.argv)
+def add_parser(subparsers):
+    parser = subparsers.add_parser(
+        "wrf_configurator",
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--summarize", action="store_true",
+                        help="Summarize configuration info and exit")
+    parser.add_argument('--target', metavar="|".join(SUPPORTED_TARGETS),
+                        choices=SUPPORTED_TARGETS, default='WPS')
+    parser.add_argument('--config',
+                        type=argparse.FileType('r', encoding='UTF-8'))
+    parser.add_argument('--ofile',
+                        type=argparse.FileType('w', encoding='UTF-8'))
+    parser.add_argument('-D', metavar='K=V', action=UpdateMap,
+                        help='Add/update configuration item.')
+    parser.add_argument('-P', '--print', metavar='K', action='append',
+                        help='Print configuration value for key K.')
+    parser.set_defaults(func=main)

@@ -24,6 +24,6 @@ find "${in_dir}" -type f -name '*.nc' > "${nc_list}"
 parallel -a "${nc_list}" -j32 --progress --joblog "${log}" --results "${rd}" \
   docker run --rm \
     -v "${in_dir}":"${in_dir}":ro -v "${out_dir}":"${out_dir}" \
-    crs4/tdm-tools tdm_radar_nc_to_geo -o "${out_dir}"/{/.} {}\;
+    crs4/tdm-tools tdm radar_nc_to_geo -o "${out_dir}"/{/.} {}\;
 
 echo "work dir was: ${wd}"

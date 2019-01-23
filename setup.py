@@ -42,16 +42,14 @@ setup(
         'Topic :: Scientific/Engineering :: Atmospheric Science',
         'Intended Audience :: Science/Research',
     ],
-    packages=['tdm', 'tdm.gfs', 'tdm.gfs.noaa', 'tdm.radar', 'tdm.wrf'],
-    scripts=[
-        'bin/tdm_gfs_fetch',
-        'bin/tdm_link_grib',
-        'bin/tdm_map_to_lonlat',
-        'bin/tdm_map_to_tree',
-        'bin/tdm_radar_events',
-        'bin/tdm_radar_nc_to_geo',
-        'bin/tdm_rainfall',
-        'bin/tdm_wrf_configurator',
-        'bin/tdm_grib2cf',
+    packages=[
+        'tdm',
+        'tdm.app',
+        'tdm.gfs',
+        'tdm.gfs.noaa',
+        'tdm.radar',
+        'tdm.wrf'
     ],
+    entry_points={'console_scripts': ['tdm = tdm.app.main:main']},
+    zip_safe=True,
 )

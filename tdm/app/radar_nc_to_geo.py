@@ -15,10 +15,8 @@
 # limitations under the License.
 
 from netCDF4 import Dataset
-import argparse
 import datetime
 import os
-import sys
 
 import cf_units
 import gdal
@@ -107,8 +105,8 @@ def main(args):
         out_driver.CreateCopy(out_path, warped_raster)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+def add_parser(subparsers):
+    parser = subparsers.add_parser("radar_nc_to_geo")
     parser.add_argument("nc_path", metavar="NETCDF_FILE")
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
-    main(parser.parse_args(sys.argv[1:]))
+    parser.set_defaults(func=main)

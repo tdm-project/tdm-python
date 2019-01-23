@@ -14,49 +14,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import os
-import sys
 import tempfile
 import cdo
+
+GRID_DESC = """\
+gridtype = lonlat
+xsize = {}
+ysize = {}
+xfirst = {}
+xinc = {}
+yfirst = {}
+yinc = {}
+"""
+
 
 def map_to_region(fin, fout,
                   xfirst, xinc, xsize,
                   yfirst, yinc, ysize):
-
     gfname = tempfile.mktemp()
     with open(gfname, 'w') as o:
-      o.write("""
-      gridtype = lonlat
-      xsize = {}
-      ysize = {}
-      xfirst = {}
-      xinc = {}
-      yfirst = {}
-      yinc = {}
-      """.format(xsize, ysize, xfirst, xinc, yfirst, yinc))
+        o.write(GRID_DESC.format(xsize, ysize, xfirst, xinc, yfirst, yinc))
     c = cdo.Cdo()
-    c.remapbil(gfname, input=fin, output=fout)      
+    c.remapbil(gfname, input=fin, output=fout)
     os.unlink(gfname)
+
 
 def main(args):
     try:
         os.makedirs(args.out_dir)
     except FileExistsError:
         pass
-    fin  = args.nc_path
+    fin = args.nc_path
     root, ext = os.path.splitext(os.path.basename(fin))
     fout = os.path.join(args.out_dir, ''.join([root, '-lonlat', ext]))
     xfirst, xsize, xinc = args.lon_range.split(':')
-    yfirst, ysize, yinc = args.lat_range.split(':')    
+    yfirst, ysize, yinc = args.lat_range.split(':')
     map_to_region(fin, fout, xfirst, xinc, xsize, yfirst, yinc, ysize)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+
+def add_parser(subparsers):
+    parser = subparsers.add_parser("map_to_lonlat")
     parser.add_argument("nc_path", metavar="NETCDF_FILE")
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
     parser.add_argument("--lat-range", metavar="LAT_RANGE",
                         help="<startlat>:<steps>:<inc> in degrees")
     parser.add_argument("--lon-range", metavar="LON_RANGE",
                         help="<startlon>:<steps>:<inc> in degrees")
-    main(parser.parse_args(sys.argv[1:]))
+    parser.set_defaults(func=main)
