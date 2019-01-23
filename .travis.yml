@@ -23,9 +23,11 @@ deploy:
   - provider: script
     script: ./docker_push
     on:
+      repo: tdm-project/tdm-tools
       branch: develop
   - provider: pypi
     user: "${TDM_USER}"
     password: "${TDM_PASS}"
     on:
+      repo: tdm-project/tdm-tools
       tags: true
