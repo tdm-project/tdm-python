@@ -24,7 +24,7 @@ import os
 
 import numpy as np
 
-from tdm.radar import utils
+import tdm.radar.utils as utils
 
 strftime = datetime.datetime.strftime
 
@@ -157,50 +157,40 @@ def main(args):
     xpos, ypos = ga.xpos(), ga.ypos()
     lat_, lon_ = utils.get_lat_lon(ga.sr, xpos, ypos)
     dt_path_pairs = utils.get_images(args.img_dir)
-    if args.all:
-        gen_events = (_ for _ in [dt_path_pairs])
+    groups = None
+    if args.resolution:
+        groups = [(dt, list(g)) for dt, g in utils.group_images(
+            dt_path_pairs, datetime.timedelta(seconds=args.resolution)
+        )]
+        nt, t0 = len(groups), groups[0][0]
     else:
-        gen_events = utils.events(dt_path_pairs, min_len=args.min_len)
-    for event in gen_events:
-        groups = None
-        if args.resolution:
-            groups = [(dt, list(g)) for dt, g in utils.group_images(
-                event, datetime.timedelta(seconds=args.resolution)
-            )]
-            nt, t0 = len(groups), groups[0][0]
-        else:
-            nt, t0 = len(event), event[0][0]
-        ds_path = os.path.join(args.out_dir, "%s.nc" % strftime(t0, utils.FMT))
-        print('saving "%s"' % ds_path)
-        try:
-            os.unlink(ds_path)
-        except FileNotFoundError:
-            pass
-        ds = Dataset(ds_path, "w")
-        ds.set_auto_mask(False)
-        ds.set_always_mask(False)
-        setncattr(ds, GLOBAL_ATTRIBUTES)
-        t, x, y, lat, lon, rf_rate = create_variables(
-            ds, ga.cols, ga.rows, nt, t0, t_chunks=args.t_chunks
-        )
-        attach_crs(ds, ga.wkt)
-        x[:], y[:], lat[:], lon[:] = xpos, ypos, lat_, lon_
-        if groups:
-            write_avg_rainfall(rf_rate, t, groups)
-        else:
-            write_rainfall(rf_rate, t, event)
-        ds.close()
+        nt, t0 = len(dt_path_pairs), dt_path_pairs[0][0]
+    ds_path = os.path.join(args.out_dir, "%s.nc" % strftime(t0, utils.FMT))
+    print('saving "%s"' % ds_path)
+    try:
+        os.unlink(ds_path)
+    except FileNotFoundError:
+        pass
+    ds = Dataset(ds_path, "w")
+    ds.set_auto_mask(False)
+    ds.set_always_mask(False)
+    setncattr(ds, GLOBAL_ATTRIBUTES)
+    t, x, y, lat, lon, rf_rate = create_variables(
+        ds, ga.cols, ga.rows, nt, t0, t_chunks=args.t_chunks
+    )
+    attach_crs(ds, ga.wkt)
+    x[:], y[:], lat[:], lon[:] = xpos, ypos, lat_, lon_
+    if groups:
+        write_avg_rainfall(rf_rate, t, groups)
+    else:
+        write_rainfall(rf_rate, t, dt_path_pairs)
+    ds.close()
 
 
 def add_parser(subparsers):
     parser = subparsers.add_parser("rainfall", description=__doc__)
     parser.add_argument("img_dir", metavar="PNG_IMG_DIR")
     parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
-    parser.add_argument("-a", "--all", action="store_true",
-                        help="single event, include all images (ignores -l)")
-    parser.add_argument("-l", "--min-len", metavar="N_SECONDS", type=int,
-                        default=utils.MIN_EVENT_LEN,
-                        help="skip events shorter than N_SECONDS")
     parser.add_argument("-r", "--resolution", metavar="N_SECONDS", type=int,
                         help="output average rainfall over N_SECONDS windows")
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
