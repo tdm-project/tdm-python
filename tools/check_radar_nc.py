@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2018-2019 CRS4
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +15,6 @@
 from netCDF4 import Dataset
 import argparse
 import datetime
-import imageio
 import os
 import subprocess
 import sys
