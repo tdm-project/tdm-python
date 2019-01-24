@@ -15,7 +15,6 @@
 from netCDF4 import Dataset
 import argparse
 import datetime
-import imageio
 import os
 import subprocess
 import sys
