@@ -13,6 +13,6 @@ mkdir -p "${netcdf_dir}"
 
 tdm grib2cf -i "${data}" -o "${netcdf_dir}"
 nc_ds=$(find "${netcdf_dir}" -name '*.nc' | head -n 1)
-"${tools}"/check_sim_nc "${netcdf_dir}"
+python "${tools}"/check_sim_nc.py "${netcdf_dir}"
 
 rm -rf "${wd}"
