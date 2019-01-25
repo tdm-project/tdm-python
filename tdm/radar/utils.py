@@ -31,15 +31,6 @@ FMT = "%Y-%m-%d_%H:%M:%S"
 FMT_LEN = 4 + 5 * 3  # %Y is 4 chars, other fields are 2 chars
 MIN_DT, MAX_DT = datetime.min, datetime.max
 
-# The radar is supposed to generate an image every minute. In practice, while
-# the peak is at 60s, deltas can go below 50 and above 70 (data from >120K
-# images). 200s seems a good threshold for separating between events (i.e., a
-# delta larger than that means the radar has been turned off and on again).
-EVENT_THRESHOLD = 200
-
-# Ignore events that last less than this, in seconds
-MIN_EVENT_LEN = 24 * 60 * 60
-
 RAINFALL_FILL_VALUE = -1.0
 
 # a and b empirical parameters for Z = a * R ^ b (reflectivity vs rain
@@ -159,24 +150,6 @@ def band_to_ma(band):
     if (flags & gdal.GMF_NODATA):
         kwargs["fill_value"] = band.GetNoDataValue()
     return np.ma.masked_array(band.ReadAsArray(), **kwargs)
-
-
-def events(dt_path_pairs, min_len=MIN_EVENT_LEN, threshold=EVENT_THRESHOLD):
-    if not isinstance(min_len, timedelta):
-        min_len = timedelta(seconds=min_len)
-    p, N = dt_path_pairs, len(dt_path_pairs)
-    if N == 0:
-        return
-    deltas = np.array([(p[i+1][0] - p[i][0]).total_seconds()
-                       for i in range(N - 1)])
-    big_delta_idx = np.argwhere(deltas > threshold)[:, 0]
-    dts_idx = np.insert(1 + big_delta_idx, 0, 0)
-    dts_idx = np.append(dts_idx, N)
-    for i in range(dts_idx.size - 1):
-        b, e = dts_idx[i], dts_idx[i+1]
-        if p[e - 1][0] - p[b][0] < min_len:
-            continue
-        yield p[b: e]
 
 
 def get_lat_lon(source_sr, xpos, ypos):

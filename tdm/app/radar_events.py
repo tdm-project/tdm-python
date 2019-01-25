@@ -16,12 +16,13 @@
 Split raw radar images into per-event directories.
 """
 
+import argparse
 import datetime
 import os
 
-from tdm.radar import utils
+import tdm.radar.events as events
+import tdm.radar.utils as utils
 
-basename = os.path.basename
 join = os.path.join
 strftime = datetime.datetime.strftime
 
@@ -30,7 +31,7 @@ def main(args):
     print("scanning %s" % args.in_dir)
     dt_path_pairs = utils.get_images(args.in_dir)
     fmt = utils.FMT
-    for event in utils.events(dt_path_pairs, min_len=args.min_len):
+    for event in events.split(dt_path_pairs, min_len=args.min_len):
         start_str = strftime(event[0][0], fmt)
         out_subdir = join(args.out_dir, start_str)
         try:
@@ -45,10 +46,14 @@ def main(args):
 
 
 def add_parser(subparsers):
-    parser = subparsers.add_parser("radar_events", description=__doc__)
+    parser = subparsers.add_parser(
+        "radar_events",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=f"{__doc__}\n{events.__doc__}"
+    )
     parser.add_argument("in_dir", metavar="INPUT_DIR")
     parser.add_argument("-l", "--min-len", metavar="N_SECONDS", type=int,
-                        default=utils.MIN_EVENT_LEN,
+                        default=events.MIN_EVENT_LEN,
                         help="skip events shorter than N_SECONDS")
     parser.add_argument("-o", "--out-dir", metavar="DIR", default=os.getcwd())
     parser.set_defaults(func=main)
