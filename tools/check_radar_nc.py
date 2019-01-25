@@ -65,7 +65,11 @@ def check_geo(dataset, footprint):
             assert abs(lon[i, j] - exp_lon) < 1e-4
 
 
-def check_time(dataset, dts):
+def check_time(dataset, dts, resolution=None):
+    if resolution:
+        dt_path_pairs = [(_, None) for _ in dts]
+        delta = datetime.timedelta(seconds=resolution)
+        dts = [_ for (_, g) in utils.group_images(dt_path_pairs, delta)]
     t = dataset.variables["time"]
     t.set_auto_mask(False)
     assert t.size == len(dts)
@@ -74,21 +78,34 @@ def check_time(dataset, dts):
         assert dt == start + datetime.timedelta(seconds=t[i].item())
 
 
-def check_rainfall_rate(dataset, dts, img_dir):
+def check_rainfall_rate(dataset, dts, img_dir, resolution=None):
     rr = dataset.variables["rainfall_rate"]
+    dt_rr_pairs = []
     for i, dt in enumerate(dts):
         name = "%s.png" % strftime(dt, "%Y-%m-%d_%H:%M:%S")
         signal = utils.get_image_data(os.path.join(img_dir, name))
         rainfall = utils.estimate_rainfall(signal)
-        assert np.ma.allclose(rr[i], rainfall, atol=1e-4)
+        if resolution:
+            dt_rr_pairs.append((dt, rainfall))
+        else:
+            assert np.ma.allclose(rr[i], rainfall, atol=1e-4)
+    if not resolution:
+        return
+    delta = datetime.timedelta(seconds=resolution)
+    chunks = [[ma for dt, ma in g]
+              for _, g in utils.group_images(dt_rr_pairs, delta)]
+    assert len(chunks) == len(rr)
+    for i, c in enumerate(chunks):
+        avg_rr = np.ma.mean(c, axis=0)
+        assert np.ma.allclose(rr[i], avg_rr, atol=1e-4)
 
 
-def check(nc_path, img_dir, footprint):
+def check(nc_path, img_dir, footprint, resolution=None):
     dts, paths = zip(*utils.get_images(img_dir))
     ds = Dataset(nc_path, "r")
     check_geo(ds, footprint)
-    check_time(ds, dts)
-    check_rainfall_rate(ds, dts, img_dir)
+    check_time(ds, dts, resolution=resolution)
+    check_rainfall_rate(ds, dts, img_dir, resolution=resolution)
 
 
 def main(args):
@@ -97,7 +114,7 @@ def main(args):
     print("checking:")
     for p in nc_paths:
         print(" ", p)
-        check(p, args.img_dir, args.footprint)
+        check(p, args.img_dir, args.footprint, resolution=args.resolution)
 
 
 if __name__ == "__main__":
@@ -105,4 +122,6 @@ if __name__ == "__main__":
     parser.add_argument("nc_dir", metavar="NETCDF_DIR")
     parser.add_argument("img_dir", metavar="PNG_IMG_DIR")
     parser.add_argument("footprint", metavar="GEOTIFF_FOOTPRINT")
+    parser.add_argument("-r", "--resolution", metavar="N_SECONDS", type=int,
+                        help="set to same value passed to the rainfall script")
     main(parser.parse_args(sys.argv[1:]))
