@@ -139,13 +139,9 @@ def write_rainfall(rf_rate, t, event):
 
 def write_avg_rainfall(rf_rate, t, groups):
     t[:] = [(_[0] - groups[0][0]).total_seconds() for _ in groups]
-    for i, (dt, g) in enumerate(groups):
+    for i, (dt, rr) in enumerate(utils.avg_rainfall(groups)):
         print("  %s (%d/%d)" % (strftime(dt, utils.FMT), i + 1, len(groups)))
-        buf = []
-        for (_, path) in g:
-            signal = utils.get_image_data(path)
-            buf.append(utils.estimate_rainfall(signal))
-        rf_rate[i, :, :] = np.ma.mean(buf, axis=0)
+        rf_rate[i, :, :] = rr
 
 
 def main(args):
@@ -159,9 +155,8 @@ def main(args):
     dt_path_pairs = utils.get_images(args.img_dir)
     groups = None
     if args.resolution:
-        groups = [(dt, list(g)) for dt, g in utils.group_images(
-            dt_path_pairs, datetime.timedelta(seconds=args.resolution)
-        )]
+        group_gen = utils.group_images(dt_path_pairs, args.resolution)
+        groups = [(dt, list(g)) for dt, g in group_gen]
         nt, t0 = len(groups), groups[0][0]
     else:
         nt, t0 = len(dt_path_pairs), dt_path_pairs[0][0]
