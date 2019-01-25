@@ -22,8 +22,6 @@ from netCDF4 import Dataset
 import datetime
 import os
 
-import numpy as np
-
 import tdm.radar.utils as utils
 
 strftime = datetime.datetime.strftime
