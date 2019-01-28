@@ -28,6 +28,12 @@ OUT_FMTS = frozenset(("nc", "tif"))
 T_CHUNKS = cfio.T_CHUNKS
 
 
+def get_rr_stream(dt_path_pairs):
+    for dt, path in dt_path_pairs:
+        signal = utils.get_image_data(path)
+        yield dt, utils.estimate_rainfall(signal)
+
+
 def main(args):
     try:
         os.makedirs(args.out_dir)
@@ -40,15 +46,20 @@ def main(args):
         group_gen = utils.group_images(dt_path_pairs, args.resolution)
         groups = [(dt, list(g)) for dt, g in group_gen]
         nt, t0 = len(groups), groups[0][0]
+        rr_stream = utils.avg_rainfall(groups)
+        report_int = 1
     else:
         nt, t0 = len(dt_path_pairs), dt_path_pairs[0][0]
+        rr_stream = get_rr_stream(dt_path_pairs)
+        report_int = 100
     ds_path = os.path.join(args.out_dir, "%s.nc" % strftime(t0, utils.FMT))
     print('saving "%s"' % ds_path)
     writer = cfio.NCWriter(ds_path, ga, nt, t0, t_chunks=args.t_chunks)
-    if groups:
-        writer.write_avg_rainfall(groups)
-    else:
-        writer.write_rainfall(dt_path_pairs)
+    print("  0/%d" % nt)
+    for i, (dt, rr) in enumerate(rr_stream):
+        if ((i + 1) % report_int == 0):
+            print("  %d/%d" % (i + 1, nt))
+        writer.write(i, dt, rr)
     writer.close()
 
 

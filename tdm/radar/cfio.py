@@ -155,18 +155,6 @@ class NCWriter(object):
             'crs_wkt': self.ga.wkt
         })
 
-    def write_rainfall(self, event):
-        self.t[:] = [(_[0] - event[0][0]).total_seconds() for _ in event]
-        print("  0/%d" % len(event))
-        for i, (_, path) in enumerate(event):
-            if ((i + 1) % 100 == 0):
-                print("  %d/%d" % (i + 1, len(event)))
-            signal = utils.get_image_data(path)
-            self.rf_rate[i, :, :] = utils.estimate_rainfall(signal)
-
-    def write_avg_rainfall(self, groups):
-        fmt = utils.FMT
-        self.t[:] = [(_[0] - groups[0][0]).total_seconds() for _ in groups]
-        for i, (dt, rr) in enumerate(utils.avg_rainfall(groups)):
-            print("  %s (%d/%d)" % (strftime(dt, fmt), i + 1, len(groups)))
-            self.rf_rate[i, :, :] = rr
+    def write(self, i, dt, rr):
+        self.t[i] = (dt - self.t0).total_seconds()
+        self.rf_rate[i, :, :] = rr
