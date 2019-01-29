@@ -37,6 +37,8 @@ RAINFALL_FILL_VALUE = -1.0
 # intensity). These values are the recommended ones for cag01est2400
 A_PARAM, B_PARAM = 100, 1.5
 
+TIFF_EXT = frozenset((".tif", ".tiff"))
+
 
 class GeoAdapter(object):
 
@@ -174,3 +176,16 @@ def get_lat_lon(source_sr, xpos, ypos):
     lon = np.array(lon).reshape(len(xpos), len(ypos)).T
     lat = np.array(lat).reshape(len(xpos), len(ypos)).T
     return lat, lon
+
+
+def scan_gtiffs(gtiff_img_dir):
+    rval = {}
+    for e in os.scandir(gtiff_img_dir):
+        if e.is_dir():
+            continue
+        head, ext = splitext(e.name)
+        if ext.lower() not in TIFF_EXT:
+            continue
+        dt = strptime(head, FMT)
+        rval[dt] = e.path
+    return rval

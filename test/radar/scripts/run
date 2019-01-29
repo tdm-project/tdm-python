@@ -13,14 +13,31 @@ geotiff_dir="${wd}/geotiff"
 
 # check average over a time window
 resolution=$((15 * 60))
+## 1. rainfall to geotiff
+tdm rainfall "${data}"/signal "${data}"/radarfootprint.tif -o "${geotiff_dir}" -r ${resolution} -f tif
+python "${tools}"/check_radar_geotiff.py "${geotiff_dir}" "${data}"/signal "${data}"/radarfootprint.tif -r ${resolution}
+rm -rf "${geotiff_dir}"
+## 2. rainfall to netcdf
 tdm rainfall "${data}"/signal "${data}"/radarfootprint.tif -o "${netcdf_dir}" -r ${resolution}
 python "${tools}"/check_radar_nc.py "${netcdf_dir}" "${data}"/signal "${data}"/radarfootprint.tif -r ${resolution}
 rm -rf "${netcdf_dir}"
 
-tdm rainfall "${data}"/signal "${data}"/radarfootprint.tif -o "${netcdf_dir}"
-python "${tools}"/check_radar_nc.py "${netcdf_dir}" "${data}"/signal "${data}"/radarfootprint.tif
+# extract a subset
+sample=${wd}/signal
+mkdir "${sample}"
+cp $(find "${data}"/signal -type f | sort | head) "${sample}"/
+
+# check individual time points
+## 1. rainfall to geotiff
+tdm rainfall "${sample}" "${data}"/radarfootprint.tif -o "${geotiff_dir}" -f tif
+python "${tools}"/check_radar_geotiff.py "${geotiff_dir}" "${sample}" "${data}"/radarfootprint.tif
+rm -rf "${netcdf_dir}"
+## 2. rainfall to netcdf
+tdm rainfall "${sample}" "${data}"/radarfootprint.tif -o "${netcdf_dir}"
+python "${tools}"/check_radar_nc.py "${netcdf_dir}" "${sample}" "${data}"/radarfootprint.tif
+## 3. netcdf to warped geotiff
 nc_ds=$(find "${netcdf_dir}" -name '*.nc' | head -n 1)
 tdm radar_nc_to_geo "${nc_ds}" -o "${netcdf_dir}"/geotiff
-python "${tools}"/check_raw_to_warped.py "${data}"/signal "${data}"/radarfootprint.tif "${netcdf_dir}"/geotiff
+python "${tools}"/check_raw_to_warped.py "${sample}" "${data}"/radarfootprint.tif "${netcdf_dir}"/geotiff
 
 rm -rf "${wd}"
