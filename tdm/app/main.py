@@ -42,6 +42,7 @@ def main():
         mod.add_parser(subparsers)
     args = parser.parse_args()
     try:
-        args.func(args)
+        func = args.func
     except AttributeError:
         parser.error("too few arguments")
+    func(args)

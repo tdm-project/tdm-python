@@ -21,7 +21,8 @@ from netCDF4 import Dataset
 import datetime
 import os
 
-import tdm.radar.utils as utils
+from . import utils
+from .io import RainfallWriter
 
 strftime = datetime.datetime.strftime
 
@@ -45,7 +46,7 @@ def setncattr(dataset, attrs):
         dataset.setncattr(k, v)
 
 
-class NCWriter(object):
+class NCWriter(RainfallWriter):
 
     def __init__(self, path, ga, nt, t0, t_chunks=T_CHUNKS):
         self.path = path

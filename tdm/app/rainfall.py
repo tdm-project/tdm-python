@@ -21,6 +21,7 @@ import os
 
 import tdm.radar.utils as utils
 import tdm.radar.cfio as cfio
+import tdm.radar.tiffio as tiffio
 
 strftime = datetime.datetime.strftime
 
@@ -52,9 +53,11 @@ def main(args):
         nt, t0 = len(dt_path_pairs), dt_path_pairs[0][0]
         rr_stream = get_rr_stream(dt_path_pairs)
         report_int = 100
-    ds_path = os.path.join(args.out_dir, "%s.nc" % strftime(t0, utils.FMT))
-    print('saving "%s"' % ds_path)
-    writer = cfio.NCWriter(ds_path, ga, nt, t0, t_chunks=args.t_chunks)
+    if args.format == "nc":
+        ds_path = os.path.join(args.out_dir, "%s.nc" % strftime(t0, utils.FMT))
+        writer = cfio.NCWriter(ds_path, ga, nt, t0, t_chunks=args.t_chunks)
+    elif args.format == "tif":
+        writer = tiffio.GTiffWriter(args.out_dir, ga)
     print("  0/%d" % nt)
     for i, (dt, rr) in enumerate(rr_stream):
         if ((i + 1) % report_int == 0):
