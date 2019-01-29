@@ -37,6 +37,8 @@ RAINFALL_FILL_VALUE = -1.0
 # intensity). These values are the recommended ones for cag01est2400
 A_PARAM, B_PARAM = 100, 1.5
 
+TIFF_EXT = frozenset((".tif", ".tiff"))
+
 
 class GeoAdapter(object):
 
@@ -109,7 +111,8 @@ def get_images(root, after=MIN_DT, before=MAX_DT):
 
 
 def group_images(dt_path_pairs, delta, after=MIN_DT):
-    assert isinstance(delta, timedelta)
+    if not isinstance(delta, timedelta):
+        delta = timedelta(seconds=delta)
 
     def grouper(p):
         return after + delta * ((p[0] - after) // delta)
@@ -134,6 +137,12 @@ def estimate_rainfall(masked_signal, a=A_PARAM, b=B_PARAM):
     rf = (Z/a)**(1/b)
     rf.set_fill_value(RAINFALL_FILL_VALUE)
     return rf
+
+
+def avg_rainfall(groups):
+    for dt, g in groups:
+        buf = [estimate_rainfall(get_image_data(path)) for _, path in g]
+        yield dt, np.ma.mean(buf, axis=0)
 
 
 def band_to_ma(band):
@@ -167,3 +176,16 @@ def get_lat_lon(source_sr, xpos, ypos):
     lon = np.array(lon).reshape(len(xpos), len(ypos)).T
     lat = np.array(lat).reshape(len(xpos), len(ypos)).T
     return lat, lon
+
+
+def scan_gtiffs(gtiff_img_dir):
+    rval = {}
+    for e in os.scandir(gtiff_img_dir):
+        if e.is_dir():
+            continue
+        head, ext = splitext(e.name)
+        if ext.lower() not in TIFF_EXT:
+            continue
+        dt = strptime(head, FMT)
+        rval[dt] = e.path
+    return rval

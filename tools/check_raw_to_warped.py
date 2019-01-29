@@ -34,18 +34,6 @@ strptime = datetime.datetime.strptime
 
 # https://www.awaresystems.be/imaging/tiff/tifftags/datetime.html
 TIFF_DT_FMT = "%Y-%m-%d %H:%M:%S"
-TIFF_EXT = frozenset((".tif", ".tiff"))
-
-
-def scan_gtiffs(gtiff_img_dir):
-    rval = {}
-    for name in os.listdir(gtiff_img_dir):
-        head, ext = splitext(name)
-        if ext.lower() not in TIFF_EXT:
-            continue
-        dt = strptime(head, utils.FMT)
-        rval[dt] = os.path.join(gtiff_img_dir, name)
-    return rval
 
 
 def compare_gtiff(fn1, fn2):
@@ -71,7 +59,7 @@ def rm_f(*paths):
 def main(args):
     dt_path_pairs = utils.get_images(args.png_img_dir)
     ga = utils.GeoAdapter(args.footprint)
-    gtiff_map = scan_gtiffs(args.gtiff_img_dir)
+    gtiff_map = utils.scan_gtiffs(args.gtiff_img_dir)
     assert {_[0] for _ in dt_path_pairs}.issubset(gtiff_map)
     wd = tempfile.mkdtemp(prefix="tdm_")
     in_fn = os.path.join(wd, "orig.tif")
