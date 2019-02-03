@@ -23,6 +23,7 @@ from tdm import __version__ as version
 
 SUB_COMMANDS = [
     'gfs_fetch',
+    'link_grib',
     'map_to_lonlat',
     'map_to_tree',
     'radar_events',
