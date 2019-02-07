@@ -12,23 +12,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""\
+Will create a index of the GRIB files present in src dir in dst dir as
+required by WPS.
+"""
+
+import argparse
 import string
 import glob
 import os
-import sys
 
 
 def link_grib(src_dir, dst_dir):
+    files = glob.glob(os.path.join(src_dir, "*"))
     dst_paths = ['GRIBFILE.'+i+j+k for i in string.ascii_uppercase
                  for j in string.ascii_uppercase
                  for k in string.ascii_uppercase]
-    for f, t in zip(glob.glob(os.path.join(src_dir, "*")), dst_paths):
+    assert len(dst_paths) >= len(files)
+    for f, t in zip(files, dst_paths):
         os.symlink(f, os.path.join(dst_dir, t))
 
 
 def main(args):
-    link_grib(args[0], args[1])
+    link_grib(args.source_directory, args.target_directory)
 
 
-if __name__ == "__main__":
-    main(sys.argv[1:])
+def add_parser(subparsers):
+    parser = subparsers.add_parser(
+        "link_grib",
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        '--target-directory', metavar='DIR', type=str,
+        default='/run',
+        help="directory where indexing files should be written"
+    )
+    parser.add_argument(
+        '--source-directory', metavar='DIR', type=str,
+        default='/gfs/model_data',
+        help="directory with the GRIB files"
+    )
+    parser.set_defaults(func=main)
