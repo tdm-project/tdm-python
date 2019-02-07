@@ -66,6 +66,7 @@ class TestConfigurator(unittest.TestCase):
                 self.assertEqual(c.domains[dn][k], v)
         test_vals = {'geogrid.io_form': 2,
                      'running.input.restart': False,
+                     'real.auto_levels_opt': 2,
                      'physics.ishallow': 0}
         for k, v in test_vals.items():
             self.assertEqual(v, c[k])
