@@ -106,6 +106,7 @@ DOMAINS_DEFAULT_FIELDS = [
     'real.num_metgrid_levels',
     'real.num_metgrid_soil_levels',
     'real.eta_levels',
+    'real.auto_levels_opt',
     'running.parallel.numtiles',
 ]
 
@@ -160,6 +161,9 @@ DEFAULTS = {
                 'constant_bc': False,
                 'spec_exp': 0.33,
             },
+        },
+        'real': {
+            'auto_levels_opt': 2,
         },
         'dynamics': {
             'wrf_core': 'ARW',
