@@ -51,7 +51,7 @@ class noaa_fetcher(object):
 
     def __init__(self, year, month, day, hour):
         self.date = datetime.datetime(year, month, day, hour, 0)
-        self.ds = 'gfs.%s' % self.date.strftime("%Y%m%d%H")
+        self.ds = 'gfs.%s' % self.date.strftime("%Y%m%d")
         LOGGER.info('Initialized for dataset %s', self.ds)
 
     def is_dataset_ready(self):
