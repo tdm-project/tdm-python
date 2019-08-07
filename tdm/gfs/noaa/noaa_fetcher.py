@@ -68,8 +68,7 @@ class noaa_fetcher(object):
             ftp.login()
             ftp.cwd(ds_path)
             cmd = 'RETR %s' % fname
-            ftp.retrbinary(cmd, open(target, 'wb').write,
-                           blocksize=1024*1024)
+            ftp.retrbinary(cmd, open(target, 'wb').write, blocksize=1024 * 1024)
         dt = datetime.datetime.now() - begin
         LOGGER.info('It took %s secs to fetch %s',
                     dt.total_seconds(), fname)
