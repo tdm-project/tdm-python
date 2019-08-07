@@ -27,8 +27,11 @@ from tdm.gfs.noaa import noaa_fetcher
 
 NOW = datetime.now()
 
+LOGGER = logging.getLogger('tdm.app.gfs_fetch')
+
 
 def main(args):
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     nf = noaa_fetcher(args.year, args.month, args.day, args.hour)
     os.mkdir(args.target_directory)
     nf.fetch(args.requested_resolution, args.target_directory,
@@ -82,5 +85,9 @@ def add_parser(subparsers):
         '--requested-resolution', metavar='RESOLUTION',
         type=str, default='0p50',
         help="Requested resolution in fraction of degree. Defaults to '0p50'"
+    )
+    parser.add_argument(
+        '--debug', action='store_true', default=False,
+        help="Enable debug messages. Defaults to 'False'"
     )
     parser.set_defaults(func=main)

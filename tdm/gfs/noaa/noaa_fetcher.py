@@ -19,9 +19,7 @@ from ftplib import FTP
 from concurrent import futures
 import logging
 
-logging.basicConfig()
 LOGGER = logging.getLogger('tdm.gfs.noaa')
-LOGGER.setLevel(logging.DEBUG)
 
 
 class noaa_fetcher(object):
