@@ -19,9 +19,7 @@ from ftplib import FTP
 from concurrent import futures
 import logging
 
-logging.basicConfig()
 LOGGER = logging.getLogger('tdm.gfs.noaa')
-LOGGER.setLevel(logging.DEBUG)
 
 
 class noaa_fetcher(object):
@@ -51,7 +49,7 @@ class noaa_fetcher(object):
 
     def __init__(self, year, month, day, hour):
         self.date = datetime.datetime(year, month, day, hour, 0)
-        self.ds = 'gfs.%s' % self.date.strftime("%Y%m%d%H")
+        self.ds = 'gfs.%s' % self.date.strftime("%Y%m%d")
         LOGGER.info('Initialized for dataset %s', self.ds)
 
     def is_dataset_ready(self):
@@ -69,7 +67,7 @@ class noaa_fetcher(object):
             ftp.cwd(ds_path)
             cmd = 'RETR %s' % fname
             ftp.retrbinary(cmd, open(target, 'wb').write,
-                           blocksize=1024*1024)
+                           blocksize=1024 * 1024)
         dt = datetime.datetime.now() - begin
         LOGGER.info('It took %s secs to fetch %s',
                     dt.total_seconds(), fname)
@@ -90,7 +88,9 @@ class noaa_fetcher(object):
                 else:
                     LOGGER.info('%s saved in %s', fname, res)
             return failed
-        ds_path = os.path.join(self.NOAA_BASE_PATH, self.ds)
+
+        ds_path = os.path.join(self.NOAA_BASE_PATH, self.ds,
+                               "{:02d}".format(self.date.hour))
         pre = self.date.strftime(pattern) + '.' + res
         LOGGER.info('Fetching %s/%s into %s', self.ds, pre, tdir)
         while not self.is_dataset_ready():

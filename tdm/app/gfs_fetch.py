@@ -16,18 +16,32 @@
 Fetch GFS files from a remote production service.
 """
 
-import argparse
 import os
+import sys
+import shutil
+import logging
+import argparse
 from datetime import datetime
-
 from tdm.gfs.noaa import noaa_fetcher
-
 
 NOW = datetime.now()
 
+LOGGER = logging.getLogger('tdm.app.gfs_fetch')
+
 
 def main(args):
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     nf = noaa_fetcher(args.year, args.month, args.day, args.hour)
+    if os.path.exists(args.target_directory):
+        LOGGER.debug("Target folder '%s' already exists",
+                     args.target_directory)
+        if args.overwrite:
+            shutil.rmtree(args.target_directory, ignore_errors=True)
+            LOGGER.info("Cleaned target folder '%s'.", args.target_directory)
+        else:
+            LOGGER.error("Target folder already exists. "
+                         "Use '--overwrite' option to enable overwrite.")
+            sys.exit(99)
     os.mkdir(args.target_directory)
     nf.fetch(args.requested_resolution, args.target_directory,
              nthreads=args.n_download_threads)
@@ -80,5 +94,13 @@ def add_parser(subparsers):
         '--requested-resolution', metavar='RESOLUTION',
         type=str, default='0p50',
         help="Requested resolution in fraction of degree. Defaults to '0p50'"
+    )
+    parser.add_argument(
+        '--overwrite', action='store_true', default=False,
+        help="Overwrite the target directory. Defaults to 'False'"
+    )
+    parser.add_argument(
+        '--debug', action='store_true', default=False,
+        help="Enable debug messages. Defaults to 'False'"
     )
     parser.set_defaults(func=main)
