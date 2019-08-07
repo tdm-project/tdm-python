@@ -19,7 +19,6 @@ Fetch GFS files from a remote production service.
 import os
 import sys
 import shutil
-import argparse
 import logging
 import argparse
 from datetime import datetime
@@ -34,12 +33,14 @@ def main(args):
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
     nf = noaa_fetcher(args.year, args.month, args.day, args.hour)
     if os.path.exists(args.target_directory):
-        LOGGER.debug("Target folder '%s' already exists", args.target_directory)
+        LOGGER.debug("Target folder '%s' already exists",
+                     args.target_directory)
         if args.overwrite:
             shutil.rmtree(args.target_directory, ignore_errors=True)
             LOGGER.info("Cleaned target folder '%s'.", args.target_directory)
         else:
-            LOGGER.error("Target folder already exists. Use '--overwrite' option to enable overwrite.")
+            LOGGER.error("Target folder already exists. "
+                         "Use '--overwrite' option to enable overwrite.")
             sys.exit(99)
     os.mkdir(args.target_directory)
     nf.fetch(args.requested_resolution, args.target_directory,
