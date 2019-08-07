@@ -16,12 +16,14 @@
 Fetch GFS files from a remote production service.
 """
 
-import argparse
 import os
+import sys
+import shutil
+import argparse
+import logging
+import argparse
 from datetime import datetime
-
 from tdm.gfs.noaa import noaa_fetcher
-
 
 NOW = datetime.now()
 
