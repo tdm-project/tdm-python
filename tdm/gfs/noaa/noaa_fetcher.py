@@ -90,7 +90,8 @@ class noaa_fetcher(object):
                 else:
                     LOGGER.info('%s saved in %s', fname, res)
             return failed
-        ds_path = os.path.join(self.NOAA_BASE_PATH, self.ds)
+
+        ds_path = os.path.join(self.NOAA_BASE_PATH, self.ds, "{:02d}".format(self.date.hour))
         pre = self.date.strftime(pattern) + '.' + res
         LOGGER.info('Fetching %s/%s into %s', self.ds, pre, tdir)
         while not self.is_dataset_ready():
